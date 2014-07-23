@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <malloc.h>
 
 /*
    Function: check_empty
@@ -47,6 +48,7 @@ void get_dimension(FILE *file, Source *src)
 	char *token = NULL;
 	char **seg = (char**)malloc(3 * sizeof(*seg));
 	struct Item_Tree *item_tree = initialize();
+	Item *items = NULL;
 
 	while (!feof(file)) {
 		fgets(line, MAX_CHARS, file);
@@ -63,6 +65,7 @@ void get_dimension(FILE *file, Source *src)
 			input_item(item_tree, seg[0]);
 		}
 	}
+	get_items(item_tree, &items);
 }
 
 /*

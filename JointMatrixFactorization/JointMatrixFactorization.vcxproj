@@ -78,13 +78,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Item_proc.c" />
+    <ClCompile Include="Item_Proc.c" />
     <ClCompile Include="Main.c" />
+    <ClCompile Include="PreProcess.c" />
     <ClCompile Include="Utility.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="algorithms.h" />
     <ClInclude Include="itemproc.h" />
+    <ClInclude Include="preprocess.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

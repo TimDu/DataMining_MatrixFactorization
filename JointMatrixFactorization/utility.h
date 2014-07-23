@@ -1,17 +1,18 @@
 #ifndef UTILITY_H_
 #define UTILITY_H_
 
+#include "preprocess.h"
 #include <stdio.h>
 #include <stdbool.h>
 
 #define MAX_CHARS 1000	// Maximum characters per line
 
-typedef struct
+typedef struct Item
 {
 	char *name;
 } Item;
 
-typedef struct
+typedef struct Source
 {
 	int N;	// Number of users
 	int K;	// Number of items

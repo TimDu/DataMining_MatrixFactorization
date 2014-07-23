@@ -7,6 +7,6 @@ struct Item_Tree;
 
 struct Item_Tree* initialize();
 void input_item(struct Item_Tree *tree, char *item);
-Item* get_items();
+void get_items(struct Item_Tree *tree, struct Item **items);
 
 #endif
