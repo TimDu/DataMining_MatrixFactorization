@@ -19,7 +19,7 @@ typedef struct Item_Chain {
 	char *name;
 } Item_Chain;
 
-Item_Chain* get_chains(Item_Tree*, Item_Chain*);
+Item_Chain* get_chain(Item_Tree*, Item_Chain*);
 
 /*
    Function: initialize

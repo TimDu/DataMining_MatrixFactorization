@@ -12,6 +12,11 @@ typedef struct Item
 	char *name;
 } Item;
 
+/*
+   Stores inputs from a source file in here.
+   NOTE: It is assumed that item IDs could be a string, while
+   user IDs are only consecutive integers that starts from 1.
+ */
 typedef struct Source
 {
 	int N;	// Number of users

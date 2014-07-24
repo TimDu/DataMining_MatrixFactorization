@@ -64,6 +64,7 @@ int main()
 	// Find user and item numbers by traversing the file
 	if ((source->N == 0) || (source->K == 0)) {
 		get_dimension(input, source);
+		printf("%d %d\n", source->K, source->N);
 	}
 
 	// Process the content of source
