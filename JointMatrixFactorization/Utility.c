@@ -100,7 +100,7 @@ int find_number(char *str)
 	char num[20];
 
 	// Finds a valid number string
-	for (int i = 0; i < (int) strlen(str); i++) {
+	for (int i = 0; i < (int) strlen(str); ++i) {
 		if ((str[i] > '9') && (str[i] < '0')) {
 			if (index != 0) {
 				num[index] = '\0';
@@ -109,7 +109,7 @@ int find_number(char *str)
 		}
 		else {
 			num[index] = str[i];
-			index++;
+			++index;
 			if (index > _countof(num)) {
 				printf("Warning: An integer value is truncated due "
 					"to the excessive amount of digits!");
@@ -138,16 +138,16 @@ void matrix_initialize(Source *src)
 	double *temp2 = (double*)malloc(src->N * src->C * sizeof(double));
 
 	src->V = (int**)malloc(src->N * sizeof(int*));
-	for (int i = 0; i < src->N; i++) {
+	for (int i = 0; i < src->N; ++i) {
 		src->V[i] = &temp1[i * src->K];
 	}
 	src->W = (double**)malloc(src->N * sizeof(double*));
-	for (int i = 0; i < src->N; i++) {
+	for (int i = 0; i < src->N; ++i) {
 		src->W[i] = &temp2[i * src->C];
 	}
 	temp2 = (double*)malloc(src->C * src->K * sizeof(double));
 	src->H = (double**)malloc(src->C * sizeof(double*));
-	for (int i = 0; i < src->C; i++) {
+	for (int i = 0; i < src->C; ++i) {
 		src->H[i] = &temp2[i * src->K];
 	}
 }

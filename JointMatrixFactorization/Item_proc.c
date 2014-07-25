@@ -6,6 +6,7 @@
 #define START_ASCII 33
 #define END_ASCII	126
 #define TABLE_RANGE 94	// Consecutive ASCII character from code 33 to code 126.
+#define SORT_FACTOR 100	// A threshold for merge sort
 
 typedef struct Item_Tree {
 	bool end;	// Records whether its precessor is a item with the last character
@@ -20,6 +21,7 @@ typedef struct Item_Chain {
 } Item_Chain;
 
 Item_Chain* get_chain(Item_Tree*, Item_Chain*);
+int* do_sort(int *, int, int);
 
 /*
    Function: initialize
@@ -65,8 +67,8 @@ void input_item(Item_Tree *tree, char *item)
 		while ((first_ascii < START_ASCII) || (first_ascii) > END_ASCII) {
 			// Find next valid character
 			if (length > 1) {
-				ind++;
-				length--;
+				++ind;
+				--length;
 				first_ascii = (int)item[ind];
 			}
 		}
@@ -87,7 +89,7 @@ void input_item(Item_Tree *tree, char *item)
 				const int index_num = _msize(tree->index) / sizeof(*tree->index);
 
 				// Case 1. Found character from stored elements
-				for (int i = 0; i < index_num; i++) {
+				for (int i = 0; i < index_num; ++i) {
 					if ((first_ascii - START_ASCII) == tree->index[i]) {
 						if (last_str != NULL) {
 							input_item(tree->char_table[tree->index[i]], last_str);
@@ -157,7 +159,7 @@ void get_items(Item_Tree *tree, Item **items)
 		item[index].name = (char*)malloc(_msize(chain->name));
 		item[index].name = chain->name;
 		chain = chain->next;
-		index++;
+		++index;
 	}
 	*items = item;
 }
@@ -197,11 +199,13 @@ Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 	}
 
 	if (tree->index != NULL) {
+		int *index = do_sort(tree->index, 0, _msize(tree->index) / sizeof(int) - 1);
+
 		// Finds its child characters
-		for (int i = 0; i < (int)(_msize(tree->index) / sizeof(*tree->index)); i++) {
+		for (int i = 0; i < (int)(_msize(index) / sizeof(int)); ++i) {
 			if (chain->name == NULL) {
 				chain->name = (char*)malloc(2 * sizeof(char));
-				chain->name[0] = (char)(tree->index[i] + START_ASCII);
+				chain->name[0] = (char)(index[i] + START_ASCII);
 			}
 			else {
 				int str_index = (p_name == NULL) ?
@@ -227,12 +231,101 @@ Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 				}
 
 				// Appends this current character
-				chain->name[str_index] = (char)(tree->index[i] + START_ASCII);
+				chain->name[str_index] = (char)(index[i] + START_ASCII);
 			}
 
-			chain = get_chain(tree->char_table[tree->index[i]], chain);
+			chain = get_chain(tree->char_table[index[i]], chain);
 		}
 	}
 
 	return chain;
+}
+
+/*
+   Function: do_sort
+   ------------------
+   Internal function. Sorts index array in Item_Tree structure by content value in
+   ascending order. This improves running time of get_chain method.
+
+   Parameter:
+   ary - An integer array
+   start - Start index of this array to be sorted
+   end - End index of this array to be sorted
+
+   Returns:
+   An sorted integer array
+ */
+int* do_sort(int *ary, int start, int end)
+{
+	int *result;
+
+	if (ary != NULL) {
+		// Return if array is not able to split
+		if (start == end) {
+			result = (int*)malloc(sizeof(int));
+			result[0] = ary[start];
+			return result;
+		}
+
+		const size = end - start + 1;
+		result = (int*)malloc(size * sizeof(int));
+
+		if ((end - start) > SORT_FACTOR) {
+			// Merge sort if array is able to split
+			int mid = (end + start) / 2;
+			int *lAry = do_sort(ary, start, mid);
+			int *rAry = do_sort(ary, mid + 1, end);
+			int lIndex = 0;
+			int rIndex = 0;
+
+			const int lBound = (int)_msize(lAry) / sizeof(int);
+			const int rBound = (int)_msize(rAry) / sizeof(int);
+
+			for (; lIndex < lBound; ++lIndex) {
+				for (; rIndex < rBound; ++rIndex) {
+					if (lAry[lIndex] >= rAry[rIndex]) {
+						result[lIndex + rIndex] = rAry[rIndex];
+					}
+					else {
+						break;
+					}
+				}
+				result[lIndex + rIndex] = lAry[lIndex];
+			}
+
+			for (; rIndex < rBound; ++rIndex) {
+				result[lIndex + rIndex] = rAry[rIndex];
+			}
+		}
+		else {
+			// Insertion sort if array size is too small to split
+			int temp_value;
+			int temp_index;
+
+			for (int i = start; i <= end; ++i) {
+				result[i - start] = ary[i];
+			}
+
+			for (int i = 1; i <= (end - start); ++i) {
+				temp_value = result[i];
+				temp_index = i;
+
+				for (int j = i - 1; j >= 0; --j) {
+					if (result[temp_index] < result[j]) {
+						result[temp_index] = result[j];
+						result[j] = temp_value;
+						temp_index = j;
+					}
+					else {
+						break;
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+	else {
+		return NULL;
+	}
 }
