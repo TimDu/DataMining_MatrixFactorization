@@ -9,6 +9,7 @@
 
 typedef struct Item
 {
+	int length;
 	char *name;
 } Item;
 
@@ -16,6 +17,7 @@ typedef struct Item
    Stores inputs from a source file in here.
    NOTE: It is assumed that item IDs could be a string, while
    user IDs are only consecutive integers that starts from 1.
+   Plus, all item IDs should be aligned in ascending order.
  */
 typedef struct Source
 {
@@ -30,7 +32,6 @@ typedef struct Source
 
 bool check_empty(FILE *file);
 int find_number(char *str);
-void get_dimension(FILE *file, Source *src);
 void matrix_initialize(Source *src);
 
 #endif

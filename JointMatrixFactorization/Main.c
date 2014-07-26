@@ -24,7 +24,7 @@ int main()
 	source = (Source*)malloc(sizeof(*source));
 
 	printf("Please input the path of your source dataset: ");
-	fgets(path, _countof(path), stdin);
+	fgets(path, sizeof(path) / sizeof(path[0]), stdin);
 	path[strlen(path) - 1] = '\0';
 
 	// Opens source files
@@ -58,6 +58,9 @@ int main()
 		char *ptr;
 		source->N = strtol(line, &ptr, 0);
 		source->K = strtol(ptr, &ptr, 0);
+		if ((source->N > 0) && (source->K > 0)) {
+
+		}
 	}
 
 	// Case 2. First row is unqualified
@@ -66,6 +69,9 @@ int main()
 		get_dimension(input, source);
 	}
 
+	for (int i = 0; i < source->items[0].length; i++) {
+		printf("%s\n", source->items[i].name);
+	}
 	// Process the content of source
 	/*do {
 		c = fgetc(input);
