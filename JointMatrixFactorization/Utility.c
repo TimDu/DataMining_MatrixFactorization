@@ -5,14 +5,14 @@
 #include <malloc.h>
 
 /*
-   Function: check_empty
-   Check if this file is empty
+	Function: check_empty
+	Check if this file is empty
 
-   Parameter:
-   file - source file
+	Parameter:
+	file - source file
 
-   Returns:
-   true if the file is empty; otherwiase, false
+	Returns:
+	true if the file is empty; otherwiase, false
  */
 bool check_empty(FILE *file)
 {
@@ -28,17 +28,17 @@ bool check_empty(FILE *file)
 }
 
 /*
-  Function: find_number
-  ---------------------
-  Finds number from a given string.
-  Only the group of first legal digits combination is considered. If
-  there is no valid number, then 0 is returned;
+	Function: find_number
+	---------------------
+	Finds number from a given string.
+	Only the group of first legal digits combination is considered.
+	If there is no valid number, then 0 is returned;
  
-  Parameter:
-  str - the string to be converted
+	Parameter:
+	str - the string to be converted
  
-  Returns:
-  A converted integer; 0 if no number is found
+	Returns:
+	A converted integer; 0 if no number is found
  */
 int find_number(char *str)
 {
@@ -71,12 +71,12 @@ int find_number(char *str)
 }
 
 /*
-  Function: matrix_initialize
-  ---------------------------
-  Initializes variable matrices of this source.
+	Function: matrix_initialize
+	---------------------------
+	Initializes variable matrices of this source.
  
-  Parameter:
-  src - the object source to be initialized
+	Parameter:
+	src - the object source to be initialized
  */
 void matrix_initialize(Source *src)
 {

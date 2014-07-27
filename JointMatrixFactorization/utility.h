@@ -9,7 +9,7 @@
 
 typedef struct Item
 {
-	int length;
+	int length;	// Length of whole item pointer space
 	char *name;
 } Item;
 

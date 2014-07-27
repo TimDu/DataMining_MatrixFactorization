@@ -56,10 +56,10 @@ int main()
 	// Sets user and item numbers from the first row
 	if (_strcmpi(line, "\n")) {
 		char *ptr;
-		source->N = strtol(line, &ptr, 0);
-		source->K = strtol(ptr, &ptr, 0);
+		source->K = strtol(line, &ptr, 0);
+		source->N = strtol(ptr, &ptr, 0); 
 		if ((source->N > 0) && (source->K > 0)) {
-
+			get_assigned(input, path, source);
 		}
 	}
 
@@ -69,9 +69,6 @@ int main()
 		get_dimension(input, source);
 	}
 
-	for (int i = 0; i < source->items[0].length; i++) {
-		printf("%s\n", source->items[i].name);
-	}
 	// Process the content of source
 	/*do {
 		c = fgetc(input);

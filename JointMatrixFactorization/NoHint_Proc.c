@@ -26,14 +26,15 @@ Item_Chain* get_chain(Item_Tree*, Item_Chain*);
 int* do_sort(int *, int, int);
 
 /*
-   Function: initialize
-   ---------------------
-   Creates a storing structure of items. This structure can efficiently read and store 
-   items with the name consisted of ASCII codes ranging from 33 to 126. It also generates
-   item array for all input items faster than normal coarsed way.
+	Function: initialize
+	---------------------
+	Creates a storing structure of items. This structure can 
+	efficiently read and store items with the name consisted of
+	ASCII codes ranging from 33 to 126. It also generates item
+	array for all input items faster than normal coarsed way.
 
-   Returns:
-   An item storing structure for preprocessing
+	Returns:
+	An item storing structure for preprocessing
  */
 Item_Tree* initialize()
 {
@@ -46,18 +47,19 @@ Item_Tree* initialize()
 }
 
 /*
-   Function: input_item
-   ---------------------
-   Reads the first character of the passed name and stores it into the given storing
-   structure if this provided character does not exist in this structure. The existence
-   is compared literally and recursively with the elements stored in this structure.
-   Therefore, this is a recrusive method. 
-   Supposing m is the length of item name, C is the constant of table size, which is 94,
-   it takes O(m) time to finish, and consumes O(Cm) memory for each item storage.
+	Function: input_item
+	---------------------
+	Reads the first character of the passed name and stores it into the
+	given storing structure if this provided character does not exist 
+	in this structure. The existence is compared literally and recursively
+	with the elements stored in this structure. Therefore, this is a 
+	recrusive method.
+	Suppose m is the length of item name, C is the constant of table size,
+	which is 94, it takes O(m) time to finish.
 
-   Parameters:
-   tree - storing structure
-   item - item name
+	Parameters:
+	tree - storing structure
+	item - item name
  */
 void input_item(Item_Tree *tree, char *item)
 {
@@ -136,16 +138,17 @@ void input_item(Item_Tree *tree, char *item)
 }
 
 /*
-Function: get_items
---------------------
-Gets an items array from this storing structure. This method uses a intermediate structure
-to help storing items. To get the minimum available running time, it is not guranteed that
-this item array would be aligned in any order.
-Suppose k is the total number of items stored in this structure, the running time is O(k).
+	Function: get_items
+	--------------------
+	Gets an items array from this storing structure. This method
+	uses a intermediate structure to help storing items. To get the
+	minimum available running time.
+	Suppose k is the total number of items stored in this structure, 
+	the running time is O(k).
 
-Parameter:
-tree - storing structure
-item - item array to be filled with
+	Parameter:
+	tree - storing structure
+	item - item array to be filled with
 */
 void get_items(Item_Tree *tree, Item **items)
 {
@@ -160,6 +163,7 @@ void get_items(Item_Tree *tree, Item **items)
 
 	get_chain(tree, pchain);
 	pchain = chain_head->next;
+	free(chain_head);
 
 	while (pchain != NULL) {
 		if (*items == NULL) {
@@ -173,26 +177,30 @@ void get_items(Item_Tree *tree, Item **items)
 		}
 		item[index].name = (char*)malloc(sizeof(char) * pchain->length);
 		item[index].name = pchain->name;
+		chain_head = pchain;
 		pchain = pchain->next;
+
+		free(chain_head);
 		++index;
 	}
 	*items = item;
 }
 
 /*
-   Function: get_chain
-   --------------------
-   Internal function. It converts tree-like storing structure of items into
-   a chain, so that get_items method is able to easily output all items.
-   Suppose k is the total number of stored item names, its time consumption
-   is O(k).
+	Function: get_chain
+	--------------------
+	Internal function. It converts tree-like storing structure of items into
+	a chain, so that get_items method is able to easily output all items. It
+	also destroy the item tree once items are stored in chain structure.
+	Suppose k is the total number of stored item names, its time consumption
+	is O(k).
 
-   Parameter:
-   tree - Original storing tree
-   chain - intermediate storing structure to be used
+	Parameter:
+	tree - Original storing tree
+	chain - intermediate storing structure to be used
 
-   Returns:
-   updated chain structure
+	Returns:
+	updated chain structure
  */
 Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 {
@@ -258,22 +266,26 @@ Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 		}
 	}
 
+	free(p_name);
+	free(tree->index);
+	free(tree);
 	return chain;
 }
 
 /*
-   Function: do_sort
-   ------------------
-   Internal function. Sorts index array in Item_Tree structure by content value in
-   ascending order. This improves running time of get_chain method.
+	Function: do_sort
+	------------------
+	Internal function. Sorts index array in Item_Tree structure 
+	by content value in ascending order. This improves running 
+	time of get_chain method.
 
-   Parameter:
-   ary - An integer array
-   start - Start index of this array to be sorted
-   end - End index of this array to be sorted
+	Parameter:
+	ary - An integer array
+	start - Start index of this array to be sorted
+	end - End index of this array to be sorted
 
-   Returns:
-   An sorted integer array
+	Returns:
+	An sorted integer array
  */
 int* do_sort(int *ary, int start, int end)
 {

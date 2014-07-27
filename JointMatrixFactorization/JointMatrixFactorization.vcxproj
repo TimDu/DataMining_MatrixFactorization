@@ -78,7 +78,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Item_Proc.c" />
+    <ClCompile Include="Hint_Proc.c" />
+    <ClCompile Include="NoHint_Proc.c" />
     <ClCompile Include="Main.c" />
     <ClCompile Include="PreProcess.c" />
     <ClCompile Include="Utility.c" />
