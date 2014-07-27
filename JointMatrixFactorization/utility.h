@@ -32,6 +32,9 @@ typedef struct Source
 
 bool check_empty(FILE *file);
 int find_number(char *str);
-void matrix_initialize(Source *src);
+// Find item position from Item structure
+int find_index(Item* items, char* item, int start, int end);
+void inputs_initialize(Source *src);
+void joints_initialize(Source *src);
 
 #endif

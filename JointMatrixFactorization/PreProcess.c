@@ -3,8 +3,65 @@
 #include <string.h>
 #include <malloc.h>
 
-void file_to_matrix(FILE *file, Source *src)
+#define _SEP " \t\n"
+
+/*
+	Function: file_to_matrix
+	-------------------------
+	Fill up matrix entries that read from a source file.
+	
+	Parameter:
+	file - source file
+	src - source structure
+
+	Returns:
+	0 for success, 1 for failure.
+ */
+int file_to_matrix(FILE *file, Source *src)
 {
+	// Set file pointer to the beginning
+	if (!fseek(file, 0, SEEK_SET)) {
+		char line[MAX_CHARS];
+		char **seg = (char**)malloc(sizeof(char*) * 3);
+		char *token = NULL;
+		int iLength = src->items->length;
+		int nIndex;
+		int kIndex;
+		int value;
+		fgets(line, MAX_CHARS, file);
+
+		while (fgets(line, MAX_CHARS, file) != NULL) {
+			seg[0] = strtok_s(line, _SEP, &token);
+			if (seg[0] != NULL) {
+				seg[1] = strtok_s(NULL, _SEP, &token);
+
+				if (seg[1] != NULL) {
+					nIndex = find_number(seg[1]);
+					seg[2] = strtok_s(NULL, _SEP, &token);
+
+					if ((nIndex > 0) && (seg[2] != NULL)) {
+						value = find_number(seg[2]);
+
+						if (value > 0) {
+							kIndex = find_index(
+								src->items, seg[0], 0, iLength - 1);
+							--nIndex;
+							if (kIndex >= 0) {
+								src->V[nIndex][kIndex] = value;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return 0;
+	}
+	else {
+		fprintf(stderr, "Fatal error: Failed to roll back file pointer "
+			"while attempting to input data set.\n");
+		return 1;
+	}
 
 }
 
@@ -27,17 +84,18 @@ void get_assigned(FILE *file, char *name, Source *src)
 	src->items = (Item*)malloc(src->K * sizeof(Item));
 	src->items->length = 0;
 	
-	while(!feof(file)) {
-		fgets(line, MAX_CHARS, file);
-		seg[0] = strtok_s(line, " \t\n", &token);
+	while(fgets(line, MAX_CHARS, file) != NULL) {
+		seg[0] = strtok_s(line, _SEP, &token);
 		if (seg[0] != NULL) {
-			seg[1] = strtok_s(NULL, " \t\n", &token);
-		}
-		if (seg[1] != NULL) {
-			seg[2] = strtok_s(NULL, " \t\n", &token);
-		}
-		if (seg[2] != NULL) {
-			push_item(name, src, seg[0]);
+			seg[1] = strtok_s(NULL, _SEP, &token);
+
+			if (seg[1] != NULL) {
+				seg[2] = strtok_s(NULL, _SEP, &token);
+
+				if (seg[2] != NULL) {
+					insert_item(name, src, seg[0]);
+				}
+			}
 		}
 	}
 
@@ -61,29 +119,28 @@ void get_dimension(FILE *file, Source *src)
 	int user_num = 0;
 	char chars[MAX_CHARS];
 	char *token = NULL;
-	char *pEnd;
 	char **seg = (char**)malloc(3 * sizeof(*seg));
 	struct Item_Tree *item_tree = initialize();
 	Item *items = NULL;
 	
-	while (!feof(file)) {
-		fgets(chars, MAX_CHARS, file);
+	while (fgets(chars, MAX_CHARS, file) != NULL) {
 		// Gets all segments
-		seg[0] = strtok_s(chars, " \t\n", &token);
+		seg[0] = strtok_s(chars, _SEP, &token);
 		if (seg[0] != NULL) {
-			seg[1] = strtok_s(NULL, " \t\n", &token);
-		}
-		if (seg[1] != NULL) {
-			seg[2] = strtok_s(NULL, " \t\n", &token);
-		}
-		if (seg[2] != NULL) {
-			// Handles item segment
-			input_item(item_tree, seg[0]);
-			// Handles user IDs
-			pEnd = NULL;
-			long temp = strtol(seg[1], &pEnd, 10);
-			if (temp > user_num) {
-				user_num = temp;
+			seg[1] = strtok_s(NULL, _SEP, &token);
+
+			if (seg[1] != NULL) {
+				seg[2] = strtok_s(NULL, _SEP, &token);
+
+				if (seg[2] != NULL) {
+					// Handles item segment
+					input_item(item_tree, seg[0]);
+					// Handles user IDs
+					long temp = find_number(seg[1]);
+					if (temp > user_num) {
+						user_num = temp;
+					}
+				}
 			}
 		}
 	}
@@ -93,8 +150,6 @@ void get_dimension(FILE *file, Source *src)
 	// Retrieves all item names and free its item tree
 	get_items(item_tree, &items);
 	src->items = items;
-	// Sets item numbers
-	src->K = items[0].length;
 	// Sets user numbers
 	src->N = user_num;
 }

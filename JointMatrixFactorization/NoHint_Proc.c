@@ -22,8 +22,8 @@ typedef struct Item_Chain {
 	int length;	// Length of string stored
 } Item_Chain;
 
-Item_Chain* get_chain(Item_Tree*, Item_Chain*);
-int* do_sort(int *, int, int);
+Item_Chain* _get_chain(Item_Tree*, Item_Chain*);
+int* _do_sort(int *, int, int);
 
 /*
 	Function: initialize
@@ -161,7 +161,7 @@ void get_items(Item_Tree *tree, Item **items)
 	pchain->length = 0;
 	chain_head->next = pchain;
 
-	get_chain(tree, pchain);
+	_get_chain(tree, pchain);
 	pchain = chain_head->next;
 	free(chain_head);
 
@@ -187,7 +187,7 @@ void get_items(Item_Tree *tree, Item **items)
 }
 
 /*
-	Function: get_chain
+	Function: _get_chain
 	--------------------
 	Internal function. It converts tree-like storing structure of items into
 	a chain, so that get_items method is able to easily output all items. It
@@ -202,7 +202,7 @@ void get_items(Item_Tree *tree, Item **items)
 	Returns:
 	updated chain structure
  */
-Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
+Item_Chain* _get_chain(Item_Tree *tree, Item_Chain *chain)
 {
 	char *p_name;
 	int p_length;
@@ -225,7 +225,7 @@ Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 	}
 
 	if (tree->index != NULL) {
-		int *index = do_sort(tree->index, 0, tree->index_length - 1);
+		int *index = _do_sort(tree->index, 0, tree->index_length - 1);
 
 		// Finds its child characters
 		for (int i = 0; i < tree->index_length; ++i) {
@@ -262,7 +262,7 @@ Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 				// Appends this current character
 				chain->name[str_index] = (char)(index[i] + START_ASCII);
 			}
-			chain = get_chain(tree->char_table[index[i]], chain);
+			chain = _get_chain(tree->char_table[index[i]], chain);
 		}
 	}
 
@@ -273,7 +273,7 @@ Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 }
 
 /*
-	Function: do_sort
+	Function: _do_sort
 	------------------
 	Internal function. Sorts index array in Item_Tree structure 
 	by content value in ascending order. This improves running 
@@ -287,7 +287,7 @@ Item_Chain* get_chain(Item_Tree *tree, Item_Chain *chain)
 	Returns:
 	An sorted integer array
  */
-int* do_sort(int *ary, int start, int end)
+int* _do_sort(int *ary, int start, int end)
 {
 	int *result;
 
@@ -305,8 +305,8 @@ int* do_sort(int *ary, int start, int end)
 		if ((end - start) > SORT_FACTOR) {
 			// Merge sort if array is able to split
 			int mid = (end + start) / 2;
-			int *lAry = do_sort(ary, start, mid);
-			int *rAry = do_sort(ary, mid + 1, end);
+			int *lAry = _do_sort(ary, start, mid);
+			int *rAry = _do_sort(ary, mid + 1, end);
 			int lIndex = 0;
 			int rIndex = 0;
 

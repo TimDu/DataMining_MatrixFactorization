@@ -3,10 +3,10 @@
 #include <string.h>
 #include <malloc.h>
 
-int find_index(Item*, char*, int, int);
+int _find_index(Item*, char*, int, int);
 
 /*
-	Function: push_item
+	Function: insert_item
 	--------------------
 	Stores directly new item names into Source structure.
 
@@ -15,11 +15,11 @@ int find_index(Item*, char*, int, int);
 	src - source structure
 	item - item name
  */
-void push_item(char *sName, Source *src, char* item)
+void insert_item(char *sName, Source *src, char* item)
 {
 	if (src->items->length > 0) {
 		int endInd = src->items->length - 1;
-		int index = find_index(src->items, item, 0, endInd);
+		int index = _find_index(src->items, item, 0, endInd);
 
 		if (index >= 0) {
 			// Store new item
@@ -49,10 +49,11 @@ void push_item(char *sName, Source *src, char* item)
 }
 
 /*
-	Function: find_index
+	Function: _find_index
 	---------------------
-	Internal function that finds position of this item name
-	in source structure, which aligned in cascending order.
+	Internal function. Finds the position of this item name in
+	source structure should be inserted to, which is aligned in
+	ascending order.
 
 	Parameter:
 	items - items in source structure
@@ -66,8 +67,8 @@ void push_item(char *sName, Source *src, char* item)
 	items to higher index.
 	If -1 is returned, it means source stucture has contained
 	this item.
- */
-int find_index(Item *items, char *item, int start, int end)
+*/
+int _find_index(Item *items, char *item, int start, int end)
 {
 	// First, special cases
 	if (start == end) {
@@ -103,10 +104,10 @@ int find_index(Item *items, char *item, int start, int end)
 	char *cmp_item = items[mid].name;
 
 	if (strcmp(cmp_item, item) > 0) {
-		return find_index(items, item, start, mid);
+		return _find_index(items, item, start, mid);
 	}
 	else if (strcmp(cmp_item, item) < 0) {
-		return find_index(items, item, mid + 1, end);
+		return _find_index(items, item, mid + 1, end);
 	}
 	else {
 		return -1;
