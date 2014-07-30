@@ -46,7 +46,7 @@ int file_to_matrix(FILE *file, Source *src)
 							kIndex = find_index(
 								src->items, seg[0], 0, iLength - 1);
 							--nIndex;
-							if (kIndex >= 0) {
+							if ((kIndex >= 0) && nIndex < src->N) {
 								src->V[nIndex][kIndex] = value;
 							}
 						}
@@ -76,7 +76,7 @@ int file_to_matrix(FILE *file, Source *src)
 	name - source name
 	src - source structure
  */
-void get_assigned(FILE *file, char *name, Source *src)
+int get_assigned(FILE *file, char *name, Source *src)
 {
 	char line[MAX_CHARS];
 	char **seg = (char**)malloc(sizeof(char*) * 3);
@@ -93,13 +93,16 @@ void get_assigned(FILE *file, char *name, Source *src)
 				seg[2] = strtok_s(NULL, _SEP, &token);
 
 				if (seg[2] != NULL) {
-					insert_item(name, src, seg[0]);
+					if (insert_item(name, src, seg[0])) {
+						return 1;
+					}
 				}
 			}
 		}
 	}
 
 	free(seg);
+	return 0;
 }
 
 /*

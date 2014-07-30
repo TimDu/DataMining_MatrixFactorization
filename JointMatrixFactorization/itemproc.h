@@ -2,6 +2,7 @@
 #define ITEM_PROCESS_H_
 
 #include "utility.h"
+#include <stdbool.h>
 
 /*	Process no hint sources	*/
 
@@ -16,6 +17,6 @@ void get_items(struct Item_Tree *tree, struct Item **items);
 /*	Process hint sources	*/
 
 // Directly insert an item from source file to source storing structure
-void insert_item(char *name, struct Source *src, char *item);
+int insert_item(char *name, struct Source *src, char *item);
 
 #endif

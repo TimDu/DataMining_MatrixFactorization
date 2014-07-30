@@ -14,9 +14,12 @@ int _find_index(Item*, char*, int, int);
 	sName - source name
 	src - source structure
 	item - item name
+
+	Returns:
+	true if succeeded. Otherwise, false.
  */
-void insert_item(char *sName, Source *src, char* item)
-{
+int insert_item(char *sName, Source *src, char* item)
+{		
 	if (src->items->length > 0) {
 		int endInd = src->items->length - 1;
 		int index = _find_index(src->items, item, 0, endInd);
@@ -37,7 +40,7 @@ void insert_item(char *sName, Source *src, char* item)
 				printf("Error: Item names in Source %s is out of the "
 					"bound set in the first row, some items might "
 					"be missed\n", sName);
-				return;
+				return 1;
 			}
 		}
 	}
@@ -46,6 +49,8 @@ void insert_item(char *sName, Source *src, char* item)
 		strcpy_s(src->items->name, strlen(item) * sizeof(char)+1, item);
 		src->items->length++;
 	}
+
+	return 0;
 }
 
 /*
@@ -94,8 +99,11 @@ int _find_index(Item *items, char *item, int start, int end)
 				return -1;
 			}
 		}
+		else if (strcmp(items[end].name, item) < 0) {
+			return end + 1;
+		}
 		else {
-			return end;
+			return -1;
 		}
 	}
 
