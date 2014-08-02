@@ -121,14 +121,14 @@ int find_number(char *str)
 void inputs_initialize(Source *src)
 {
 	src->K = src->items->length;	// Adjust item number
-	int *temp1 = (int*)malloc(src->N * src->K * sizeof(int));
+	int *temp = (int*)malloc(src->N * src->K * sizeof(int));
 	src->V = (int**)malloc(src->N * sizeof(int*));
 
 	for (int i = 0; i < src->N; ++i) {
 		for (int j = 0; j < src->K; ++j) {
-			temp1[i * src->K + j] = 0;
+			temp[i * src->K + j] = 0;
 		}
-		src->V[i] = &temp1[i * src->K];
+		src->V[i] = &temp[i * src->K];
 	}
 }
 
@@ -142,15 +142,15 @@ void inputs_initialize(Source *src)
  */
 void joints_initialize(Source *src)
 {
-	double *temp2 = (double*)malloc(src->N * src->C * sizeof(double));
+	double *temp = (double*)malloc(src->N * src->C * sizeof(double));
 
 	src->W = (double**)malloc(src->N * sizeof(double*));
 	for (int i = 0; i < src->N; ++i) {
-		src->W[i] = &temp2[i * src->C];
+		src->W[i] = &temp[i * src->C];
 	}
-	temp2 = (double*)malloc(src->C * src->K * sizeof(double));
+	temp = (double*)malloc(src->C * src->K * sizeof(double));
 	src->H = (double**)malloc(src->C * sizeof(double*));
 	for (int i = 0; i < src->C; ++i) {
-		src->H[i] = &temp2[i * src->K];
+		src->H[i] = &temp[i * src->K];
 	}
 }
