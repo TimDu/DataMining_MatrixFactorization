@@ -4,6 +4,11 @@
 #include "utility.h"
 #include <stdbool.h>
 
+/*
+ * This header contains assistant method abstracts of reading
+ * data set from source files.
+ */
+
 /*	Process no hint sources	*/
 
 struct Item_Tree;

@@ -80,14 +80,14 @@ int find_index(Item *items, char *item, int start, int end)
 	Returns:
 	A converted integer; 0 if no number is found
  */
-int find_number(char *str)
+double find_number(char *str)
 {
 	int index = 0;
 	char num[20];
 
 	// Finds a valid number string
 	for (int i = 0; i < (int) strlen(str); ++i) {
-		if ((str[i] > '9') && (str[i] < '0')) {
+		if (((str[i] > '9') && (str[i] < '0')) || (str[i] == '.')) {
 			if (index != 0) {
 				num[index] = '\0';
 				break;
@@ -107,7 +107,7 @@ int find_number(char *str)
 	// Fails to find a number string
 	if (index == 0) { return 0; }
 
-	return strtol(num, NULL, 0);
+	return strtod(num, NULL);
 }
 
 /*
@@ -121,8 +121,8 @@ int find_number(char *str)
 void inputs_initialize(Source *src)
 {
 	src->K = src->items->length;	// Adjust item number
-	int *temp = (int*)malloc(src->N * src->K * sizeof(int));
-	src->V = (int**)malloc(src->N * sizeof(int*));
+	double *temp = (double*)malloc(src->N * src->K * sizeof(double));
+	src->V = (double**)malloc(src->N * sizeof(double*));
 
 	for (int i = 0; i < src->N; ++i) {
 		for (int j = 0; j < src->K; ++j) {
@@ -130,6 +130,9 @@ void inputs_initialize(Source *src)
 		}
 		src->V[i] = &temp[i * src->K];
 	}
+
+	src->min = -1;
+	src->max = -1;
 }
 
 /*
@@ -140,17 +143,19 @@ void inputs_initialize(Source *src)
 	Parameter:
 	src - the object source to be initialized
  */
-void joints_initialize(Source *src)
+void joints_initialize(Source *src, int size)
 {
-	double *temp = (double*)malloc(src->N * src->C * sizeof(double));
-
-	src->W = (double**)malloc(src->N * sizeof(double*));
-	for (int i = 0; i < src->N; ++i) {
-		src->W[i] = &temp[i * src->C];
-	}
-	temp = (double*)malloc(src->C * src->K * sizeof(double));
-	src->H = (double**)malloc(src->C * sizeof(double*));
-	for (int i = 0; i < src->C; ++i) {
-		src->H[i] = &temp[i * src->K];
+	double *temp;
+	for (int i = 0; i < size; ++i) {
+		temp = (double*)malloc(src[i].N * src[i].C * sizeof(double));
+		src[i].W = (double**)malloc(src[i].N * sizeof(double*));
+		for (int i = 0; i < src[i].N; ++i) {
+			src[i].W[i] = &temp[i * src[i].C];
+		}
+		temp = (double*)malloc(src[i].C * src[i].K * sizeof(double));
+		src[i].H = (double**)malloc(src[i].C * sizeof(double*));
+		for (int i = 0; i < src[i].C; ++i) {
+			src[i].H[i] = &temp[i * src[i].K];
+		}
 	}
 }

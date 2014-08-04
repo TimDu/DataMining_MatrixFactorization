@@ -24,17 +24,19 @@ typedef struct Source
 	int N;	// Number of users
 	int K;	// Number of items
 	int C;	// Number of groups
-	int **V;	// User ratings matrix
+	double min;	// Minimum value of user rating
+	double max; // Maximum value of user rating
+	double **V;	// User ratings matrix
 	double **W; // Goup membership matrix
 	double **H;	// Group ratings matrix
 	Item *items;	// Item names
 } Source;
 
 bool check_empty(FILE *file);
-int find_number(char *str);
+double find_number(char *str);
 // Find item position from Item structure
 int find_index(Item* items, char* item, int start, int end);
 void inputs_initialize(Source *src);
-void joints_initialize(Source *src);
+void joints_initialize(Source *src, int size);
 
 #endif

@@ -30,7 +30,7 @@ int main()
 		// Enter number of sources
 		printf("%s: ", cmd1);
 		gets_s(cmd, sizeof(cmd));
-		srcSz = find_number(cmd);
+		srcSz = (int) find_number(cmd);
 
 		if (srcSz > 0) {
 			source = (Source*)malloc(srcSz * sizeof(*source));
@@ -83,20 +83,20 @@ int main()
 					source[srcIndex].K = strtol(line, &ptr, 0);
 					source[srcIndex].N = strtol(ptr, &ptr, 0);
 					if ((source[srcIndex].N > 0) && (source[srcIndex].K > 0)) {
-						get_assigned(input, cmd, source);
+						get_assigned(input, cmd, &source[srcIndex]);
 					}
 				}
 
 				// Case 2. First row is unqualified
 				// Find user and item numbers by traversing the file
 				if ((source[srcIndex].N == 0) || (source[srcIndex].K == 0)) {
-					get_dimension(input, source);
+					get_dimension(input, &source[srcIndex]);
 				}
 
-				inputs_initialize(source);
+				inputs_initialize(&source[srcIndex]);
 
 				// Read dataset
-				if (file_to_matrix(input, source)) {
+				if (file_to_matrix(input, &source[srcIndex])) {
 					// File not qualified
 					continue;
 				}
@@ -126,11 +126,11 @@ int main()
 				}
 
 				// Assign group number
-				if ((val_c = find_number(cmd)) > 0) {
+				if ((val_c = (int) find_number(cmd)) > 0) {
 					printf("%s: ", cmd4);
 					gets_s(cmd, sizeof(cmd));
 
-					// Reset commande detector
+					// Reset command detector
 					if (!(strcmp(cmd, "R") && strcmp(cmd, "r"))) {
 						free(source);
 						printf("[RESET]\n");
@@ -141,9 +141,13 @@ int main()
 						goto Ending;
 					}
 
-					if ((alpha = find_number(cmd)) > 0) {
+					if ((alpha = (int) find_number(cmd)) > 0) {
+						// Initialize joint matrices
+						joints_initialize(source, srcSz);
 						// Perform algorithms
 						matrix_factorization(source, srcSz, val_c, alpha);
+
+						// TODO: Continue or not?
 					}
 				}
 				else {

@@ -27,7 +27,7 @@ int file_to_matrix(FILE *file, Source *src)
 		int iLength = src->items->length;
 		int nIndex;
 		int kIndex;
-		int value;
+		double value;
 		fgets(line, MAX_CHARS, file);
 
 		while (fgets(line, MAX_CHARS, file) != NULL) {
@@ -48,6 +48,12 @@ int file_to_matrix(FILE *file, Source *src)
 							--nIndex;
 							if ((kIndex >= 0) && nIndex < src->N) {
 								src->V[nIndex][kIndex] = value;
+								if ((src->min == -1) || (src->min > value)) {
+									src->min = value;
+								}
+								if (src->max < value) {
+									src->max = value;
+								}
 							}
 						}
 					}
@@ -139,7 +145,7 @@ void get_dimension(FILE *file, Source *src)
 					// Handles item segment
 					input_item(item_tree, seg[0]);
 					// Handles user IDs
-					long temp = find_number(seg[1]);
+					long temp = (long) find_number(seg[1]);
 					if (temp > user_num) {
 						user_num = temp;
 					}
