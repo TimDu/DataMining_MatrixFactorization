@@ -37,6 +37,6 @@ double find_number(char *str);
 // Find item position from Item structure
 int find_index(Item* items, char* item, int start, int end);
 void inputs_initialize(Source *src);
-void joints_initialize(Source *src, int size);
+void joints_initialize(Source *src, int size, int c);
 
 #endif

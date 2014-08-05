@@ -1,7 +1,10 @@
 #include "algorithms.h"
 #include <stdlib.h>
+#include <math.h>
 
-void _initialize(Source *src, int size);
+double **_getW(double**, int, int);
+double** _sumH(Source*, int);
+void _initialize(Source*, int);
 double** _pos_matrix(double**, int, int);
 double** _neg_matrix(double**, int, int);
 
@@ -15,15 +18,165 @@ double** _neg_matrix(double**, int, int);
 	size - number of sources
 	valC - group number
  */
-void matrix_factorization(Source *src, int size, int valC)
+void matrix_factorization(Source *src, int size, int alpha)
 {
+	// Matrices componnents
+	double **vh;
+	double **n_vh;
+	double **whh;
+	double **n_whh;
+	double **wwh;
+	double **n_wwh;
+	double **wv;
+	double **n_wv;
+	double *w;
+	double **h;
+	double **n_h;
+	double **sum_h;
+	double **n_sum_h;
+	double **trans;
+
+	double **temp = NULL;	// Pointer used to free memory
+
+	_initialize(src, size);
+	sum_h = _sumH(src, size);
+	temp = sum_h;
+	n_sum_h = _neg_matrix(sum_h, src->C, src->K);
+	sum_h = _pos_matrix(sum_h, src->C, src->K);
+	free(temp);
+
+	// Loop until converge
 	for (int i = 0; i < size; ++i) {
-		src[i].C = valC;
+		// Computes components for W matrix update
+		trans = transpose(src[i].H, src[i].C, src[i].K);
 
-		for (int j = 0; j < valC; ++j) {
+		vh = multiply(src[i].V, src[i].N, trans, src[i].C, src[i].K);
+		temp = vh;
+		n_vh = _neg_matrix(vh, src[i].N, src[i].C);
+		vh = _pos_matrix(vh, src[i].N, src[i].C);
+		clear(temp, src[i].N);
 
+		temp = multiply(src[i].H, src[i].C, trans, src[i].C, src[i].K);
+		whh = multiply(src[i].W, src[i].N, temp, src[i].C, src[i].C);
+		clear(temp, src[i].C);
+		temp = whh;
+		n_whh = _neg_matrix(whh, src[i].N, src[i].C);
+		whh = _pos_matrix(whh, src[i].N, src[i].C);
+		clear(temp, src[i].N);
+		clear(trans, src[i].K);
+
+		w = _getW(src[i].W, src[i].N, src[i].C);
+
+		for (int j = 0; j < src->N; ++j) {
+			for (int k = 0; k < src->C; ++k) {
+				src[i].W[j][k] = src[i].W[j][k] * sqrt(
+					(vh[j][k] + n_whh[j][k]) / (n_vh[j][k] + whh[j][k]));
+			}
+		}
+
+		clear(vh, src[i].N);
+		clear(n_vh, src[i].N);
+		clear(whh, src[i].N);
+		clear(n_whh, src[i].N);
+
+		// Computes components for H matrix update
+		trans = transpose(w, src[i].N, src[i].C);
+
+		wv = multiply(trans, src[i].C, src[i].V, src[i].K, src[i].N);
+		temp = wv;
+		n_wv = _neg_matrix(wv, src[i].C, src[i].K);
+		wv = _pos_matrix(wv, src[i].C, src[i].K);
+		clear(temp, src[i].C);
+
+		temp = multiply(trans, src[i].C, w, src[i].C, src[i].N);
+		wwh = multiply(temp, src[i].C, src[i].H, src[i].K, src[i].C);
+		clear(temp, src[i].C);
+		temp = wwh;
+		n_wwh = _neg_matrix(wwh, src[i].C, src[i].K);
+		wwh = _pos_matrix(wwh, src[i].C, src[i].K);
+		clear(temp, src[i].C);
+
+		h = _pos_matrix(src[i].H, src[i].C, src[i].K);
+		n_h = _neg_matrix(src[i].H, src[i].C, src[i].K);
+
+		for (int j = 0; j < src[i].C; ++j) {
+			for (int k = 0; k < src[i].K; ++k) {
+				src[i].H[j][k] = src[i].H[j][k] * sqrt(
+					(wv[j][k] + n_wwh[j][k] + alpha * size * n_h[j][k] +
+					alpha * (sum_h[j][k] - h[j][k])) / 
+					(n_wv[j][k] + wwh[j][k] + alpha * size * h[j][k] +
+					alpha * (n_sum_h[j][k] - n_h[j][k])));
+			}
+		}
+
+		clear(wv, src[i].C);
+		clear(n_wv, src[i].C);
+		clear(wwh, src[i].C);
+		clear(n_wwh, src[i].C);
+		clear(h, src[i].C);
+		claer(n_h, src[i].C);
+	}
+}
+
+/*
+	Function: _getW
+	----------------
+	Internal function. Get matrix snapshot on matrix W.
+
+	Parameters:
+	w - matrix W
+	r - row number
+	c - column number
+
+	Returns:
+	A copy of matrix W
+ */
+double** _getW(double **w, int r, int c)
+{
+	double **copy = (double**)malloc(r * sizeof(double*));
+
+	for (int i = 0; i < r; ++i) {
+		copy[i] = (double*)malloc(c * sizeof(double));
+		for (int j = 0; j < c; ++j) {
+			copy[i][j] = w[i][j];
 		}
 	}
+
+	return copy;
+}
+
+/*
+	Function: _sumH
+	----------------
+	Internal function. Sum up all item-group matrices.
+	NOTE: Each source has same items in it.
+
+	Parameters:
+	src - source structures array
+	size - size of source array
+
+	Returns:
+	Sum of H matrices from all sources
+ */
+double** _sumH(Source *src, int size) {
+	double **result = (double**)malloc(src->C * sizeof(double*));
+
+	for (int i = 0; i < src->C; ++i) {
+		result[i] = (double*)malloc(src->K * sizeof(double));
+		for (int j = 0; j < src->K; ++j) {
+			result[i][j] = 0;
+		}
+	}
+
+	for (int i = 0; i < size; ++i) {
+		for (int j = 0; j < src->C; ++j) {
+			for (int k = 0; k < src->K; ++k) {
+				result[j][k] += src[i].H[j][k];
+			}
+		}
+	}
+
+	return result;
 }
 
 /*
@@ -113,4 +266,21 @@ double** _neg_matrix(double **matrix, int row, int col) {
 	}
 
 	return temp;
+}
+
+/*
+	Function: clear
+	----------------
+	Internal function. Clear 2-d pointer space.
+
+	Parameters:
+	ptr - pointer space
+	r - pointer dimension
+ */
+void clear(double **ptr, int r)
+{
+	for (int i = 0; i < r;) {
+		free(ptr[i]);
+	}
+	free(ptr);
 }

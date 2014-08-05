@@ -143,18 +143,19 @@ void inputs_initialize(Source *src)
 	Parameter:
 	src - the object source to be initialized
  */
-void joints_initialize(Source *src, int size)
+void joints_initialize(Source *src, int size, int val_c)
 {
 	double *temp;
 	for (int i = 0; i < size; ++i) {
-		temp = (double*)malloc(src[i].N * src[i].C * sizeof(double));
+		src[i].C = val_c;
+		temp = (double*)malloc(src[i].N * val_c * sizeof(double));
 		src[i].W = (double**)malloc(src[i].N * sizeof(double*));
 		for (int i = 0; i < src[i].N; ++i) {
-			src[i].W[i] = &temp[i * src[i].C];
+			src[i].W[i] = &temp[i * val_c];
 		}
-		temp = (double*)malloc(src[i].C * src[i].K * sizeof(double));
-		src[i].H = (double**)malloc(src[i].C * sizeof(double*));
-		for (int i = 0; i < src[i].C; ++i) {
+		temp = (double*)malloc(val_c * src[i].K * sizeof(double));
+		src[i].H = (double**)malloc(val_c * sizeof(double*));
+		for (int i = 0; i < val_c; ++i) {
 			src[i].H[i] = &temp[i * src[i].K];
 		}
 	}

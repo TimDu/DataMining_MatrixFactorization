@@ -2,7 +2,8 @@
 #define ALGORITHMS_H_
 
 #include "utility.h"
+#include "matrix.h"
 
-void matrix_factorization(Source *src, int size, int c);
+void matrix_factorization(Source *src, int size, int alpha);
 
 #endif

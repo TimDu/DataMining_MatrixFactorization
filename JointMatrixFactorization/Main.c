@@ -143,9 +143,9 @@ int main()
 
 					if ((alpha = (int) find_number(cmd)) > 0) {
 						// Initialize joint matrices
-						joints_initialize(source, srcSz);
+						joints_initialize(source, srcSz, val_c);
 						// Perform algorithms
-						matrix_factorization(source, srcSz, val_c, alpha);
+						matrix_factorization(source, srcSz, alpha);
 
 						// TODO: Continue or not?
 					}

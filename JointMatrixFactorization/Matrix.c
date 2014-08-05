@@ -5,11 +5,10 @@
 
 void strassen_multiply(double**, int, int, int, int, double**, int,
 	int, int, int, double**);
-double** sum(double**, double**, int, int);
-double** sub(double**, double**, int, int);
 double** matrix_sum(double**, int, int, int, int, int, int, int, int);
 double** matrix_sub(double**, int, int, int, int, int, int, int, int);
 void matrix_pad(double***, int*, int*);
+void clear(double***, int, int);
 
 /*
 	Function: multiply
@@ -211,13 +210,7 @@ void strassen_multiply(
 			m[5], mR / 2, mC / 2), m[1], mR / 2, mC / 2);
 
 		// Free intermediate matrices
-		for (int i = 0; i < 7; ++i) {
-			for (int j = 0; j < mR / 2; ++j) {
-				free(m[i][j]);
-			}
-			free(m[i]);
-		}
-		free(m);
+		clear(m, 7, mR / 2);
 
 		// Combine sub-matrices
 		for (int i = 0; i < 4; ++i) {
@@ -230,13 +223,7 @@ void strassen_multiply(
 		}
 
 		// Free sub mmatrices
-		for (int i = 0; i < 4; ++i) {
-			for (int j = 0; j < mR / 2; ++j) {
-				free(c_sub[i][j]);
-			}
-			free(c_sub[i]);
-		}
-		free(c_sub);
+		clear(c_sub, 4, mR / 2);
 	}
 }
 
@@ -294,6 +281,33 @@ double** sub(double **a, double **b, int r, int c)
 	}
 
 	return result;
+}
+
+/*
+	Function: transpose
+	--------------------
+	Transpose a matrix.
+
+	Parameters:
+	a - matrix to be transposed
+	r - row number
+	c - column number
+
+	Return:
+	Transposed matrix
+ */
+double** transpose(double **a, int r, int c)
+{
+	double **trans = (double**)malloc(c * sizeof(double*));
+
+	for (int i = 0; i < c; ++i) {
+		trans[i] = (double*)malloc(r * sizeof(double));
+		for (int j = 0; j < r; ++j) {
+			trans[c][r] = a[r][c];
+		}
+	}
+
+	return trans;
 }
 
 /*
@@ -405,4 +419,25 @@ void matrix_pad(double ***a, int *r, int *c) {
 
 	*r = rPad;
 	*c = cPad;
+}
+
+/*
+	Function: clear
+	----------------
+	Internal function. Clear 3-d pointer space
+
+	Parameters:
+	ptr - pointer to be cleared
+	dim1 - pointer dimension 1
+	dim2 - pointer dimemsion 2
+ */
+void clear(double ***ptr, int dim1, int dim2)
+{
+	for (int i = 0; i < dim1; ++i) {
+		for (int j = 0; j < dim2; ++j) {
+			free(ptr[i][j]);
+		}
+		free(ptr[i]);
+	}
+	free(ptr);
 }
