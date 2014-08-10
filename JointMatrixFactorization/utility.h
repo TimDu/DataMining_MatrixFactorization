@@ -38,5 +38,6 @@ double find_number(char *str);
 int find_index(Item* items, char* item, int start, int end);
 void inputs_initialize(Source *src);
 void joints_initialize(Source *src, int size, int c);
+void clear2D(double ***ptr, int r);
 
 #endif

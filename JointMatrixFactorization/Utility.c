@@ -122,7 +122,15 @@ void inputs_initialize(Source *src)
 {
 	src->K = src->items->length;	// Adjust item number
 	double *temp = (double*)malloc(src->N * src->K * sizeof(double));
+	if (temp == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 	src->V = (double**)malloc(src->N * sizeof(double*));
+	if (src->V == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < src->N; ++i) {
 		for (int j = 0; j < src->K; ++j) {
@@ -149,14 +157,48 @@ void joints_initialize(Source *src, int size, int val_c)
 	for (int i = 0; i < size; ++i) {
 		src[i].C = val_c;
 		temp = (double*)malloc(src[i].N * val_c * sizeof(double));
+		if (temp == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 		src[i].W = (double**)malloc(src[i].N * sizeof(double*));
-		for (int i = 0; i < src[i].N; ++i) {
-			src[i].W[i] = &temp[i * val_c];
+		if (src[i].W == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
+		for (int j = 0; j < src[i].N; ++j) {
+			src[i].W[j] = &temp[j * val_c];
 		}
 		temp = (double*)malloc(val_c * src[i].K * sizeof(double));
+		if (temp == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 		src[i].H = (double**)malloc(val_c * sizeof(double*));
-		for (int i = 0; i < val_c; ++i) {
-			src[i].H[i] = &temp[i * src[i].K];
+		if (src[i].H == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
+		for (int j = 0; j < val_c; ++j) {
+			src[i].H[j] = &temp[j * src[i].K];
 		}
 	}
+}
+
+/*
+	Function: clear2D
+	----------------
+	Clear 2-d pointer space.
+
+	Parameters:
+	ptr - pointer space
+	r - pointer dimension
+*/
+void clear2D(double ***ptr, int r)
+{
+	double **ary = *ptr;
+	for (int i = 0; i < r; ++i) {
+		free(ary[i]);
+	}
+	free(ary);
 }

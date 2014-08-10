@@ -1,4 +1,5 @@
 #include "algorithms.h"
+#include "utility.h"
 #include <stdlib.h>
 #include <math.h>
 
@@ -29,7 +30,7 @@ void matrix_factorization(Source *src, int size, int alpha)
 	double **n_wwh;
 	double **wv;
 	double **n_wv;
-	double *w;
+	double **w;
 	double **h;
 	double **n_h;
 	double **sum_h;
@@ -43,79 +44,99 @@ void matrix_factorization(Source *src, int size, int alpha)
 	temp = sum_h;
 	n_sum_h = _neg_matrix(sum_h, src->C, src->K);
 	sum_h = _pos_matrix(sum_h, src->C, src->K);
-	free(temp);
+	clear2D(&temp, src->C);
 
-	// Loop until converge
-	for (int i = 0; i < size; ++i) {
-		// Computes components for W matrix update
-		trans = transpose(src[i].H, src[i].C, src[i].K);
+	while (true) {
+		// Loop until converge
+		for (int i = 0; i < size; ++i) {
+			// Computes components for W matrix update
+			trans = transpose(src[i].H, src[i].C, src[i].K);
 
-		vh = multiply(src[i].V, src[i].N, trans, src[i].C, src[i].K);
-		temp = vh;
-		n_vh = _neg_matrix(vh, src[i].N, src[i].C);
-		vh = _pos_matrix(vh, src[i].N, src[i].C);
-		clear(temp, src[i].N);
+			vh = multiply(src[i].V, src[i].N, trans, src[i].C, src[i].K);
+			temp = vh;
+			n_vh = _neg_matrix(vh, src[i].N, src[i].C);
+			vh = _pos_matrix(vh, src[i].N, src[i].C);
+			clear2D(&temp, src[i].N);
 
-		temp = multiply(src[i].H, src[i].C, trans, src[i].C, src[i].K);
-		whh = multiply(src[i].W, src[i].N, temp, src[i].C, src[i].C);
-		clear(temp, src[i].C);
-		temp = whh;
-		n_whh = _neg_matrix(whh, src[i].N, src[i].C);
-		whh = _pos_matrix(whh, src[i].N, src[i].C);
-		clear(temp, src[i].N);
-		clear(trans, src[i].K);
+			temp = multiply(src[i].H, src[i].C, trans, src[i].C, src[i].K);
+			whh = multiply(src[i].W, src[i].N, temp, src[i].C, src[i].C);
+			clear2D(&temp, src[i].C);
+			temp = whh;
+			n_whh = _neg_matrix(whh, src[i].N, src[i].C);
+			whh = _pos_matrix(whh, src[i].N, src[i].C);
+			clear2D(&temp, src[i].N);
+			clear2D(&trans, src[i].K);
 
-		w = _getW(src[i].W, src[i].N, src[i].C);
+			w = _getW(src[i].W, src[i].N, src[i].C);
 
-		for (int j = 0; j < src->N; ++j) {
-			for (int k = 0; k < src->C; ++k) {
-				src[i].W[j][k] = src[i].W[j][k] * sqrt(
-					(vh[j][k] + n_whh[j][k]) / (n_vh[j][k] + whh[j][k]));
+			for (int j = 0; j < src->N; ++j) {
+				for (int k = 0; k < src->C; ++k) {
+					src[i].W[j][k] = src[i].W[j][k] * sqrt(
+						(vh[j][k] + n_whh[j][k]) / (n_vh[j][k] + whh[j][k]));
+				}
 			}
-		}
 
-		clear(vh, src[i].N);
-		clear(n_vh, src[i].N);
-		clear(whh, src[i].N);
-		clear(n_whh, src[i].N);
+			clear2D(&vh, src[i].N);
+			clear2D(&n_vh, src[i].N);
+			clear2D(&whh, src[i].N);
+			clear2D(&n_whh, src[i].N);
 
-		// Computes components for H matrix update
-		trans = transpose(w, src[i].N, src[i].C);
+			// Computes components for H matrix update
+			trans = transpose(w, src[i].N, src[i].C);
 
-		wv = multiply(trans, src[i].C, src[i].V, src[i].K, src[i].N);
-		temp = wv;
-		n_wv = _neg_matrix(wv, src[i].C, src[i].K);
-		wv = _pos_matrix(wv, src[i].C, src[i].K);
-		clear(temp, src[i].C);
+			wv = multiply(trans, src[i].C, src[i].V, src[i].K, src[i].N);
+			temp = wv;
+			n_wv = _neg_matrix(wv, src[i].C, src[i].K);
+			wv = _pos_matrix(wv, src[i].C, src[i].K);
+			clear2D(&temp, src[i].C);
 
-		temp = multiply(trans, src[i].C, w, src[i].C, src[i].N);
-		wwh = multiply(temp, src[i].C, src[i].H, src[i].K, src[i].C);
-		clear(temp, src[i].C);
-		temp = wwh;
-		n_wwh = _neg_matrix(wwh, src[i].C, src[i].K);
-		wwh = _pos_matrix(wwh, src[i].C, src[i].K);
-		clear(temp, src[i].C);
+			temp = multiply(trans, src[i].C, w, src[i].C, src[i].N);
+			wwh = multiply(temp, src[i].C, src[i].H, src[i].K, src[i].C);
+			clear2D(&temp, src[i].C);
+			temp = wwh;
+			n_wwh = _neg_matrix(wwh, src[i].C, src[i].K);
+			wwh = _pos_matrix(wwh, src[i].C, src[i].K);
+			clear2D(&temp, src[i].C);
 
-		h = _pos_matrix(src[i].H, src[i].C, src[i].K);
-		n_h = _neg_matrix(src[i].H, src[i].C, src[i].K);
+			h = _pos_matrix(src[i].H, src[i].C, src[i].K);
+			n_h = _neg_matrix(src[i].H, src[i].C, src[i].K);
 
-		for (int j = 0; j < src[i].C; ++j) {
-			for (int k = 0; k < src[i].K; ++k) {
-				src[i].H[j][k] = src[i].H[j][k] * sqrt(
-					(wv[j][k] + n_wwh[j][k] + alpha * size * n_h[j][k] +
-					alpha * (sum_h[j][k] - h[j][k])) / 
-					(n_wv[j][k] + wwh[j][k] + alpha * size * h[j][k] +
-					alpha * (n_sum_h[j][k] - n_h[j][k])));
+			for (int j = 0; j < src[i].C; ++j) {
+				for (int k = 0; k < src[i].K; ++k) {
+					src[i].H[j][k] = src[i].H[j][k] * sqrt(
+						(wv[j][k] + n_wwh[j][k] + alpha * size * n_h[j][k] +
+						alpha * (sum_h[j][k] - h[j][k])) /
+						(n_wv[j][k] + wwh[j][k] + alpha * size * h[j][k] +
+						alpha * (n_sum_h[j][k] - n_h[j][k])));
+				}
 			}
-		}
 
-		clear(wv, src[i].C);
-		clear(n_wv, src[i].C);
-		clear(wwh, src[i].C);
-		clear(n_wwh, src[i].C);
-		clear(h, src[i].C);
-		claer(n_h, src[i].C);
+			clear2D(&wv, src[i].C);
+			clear2D(&n_wv, src[i].C);
+			clear2D(&wwh, src[i].C);
+			clear2D(&n_wwh, src[i].C);
+			clear2D(&h, src[i].C);
+			clear2D(&n_h, src[i].C);
+		}
 	}
+}
+
+/*
+	Function: _getError
+	--------------------
+	Internal function. Calculate total cost with current
+	matrices W and H.
+
+	Parameters:
+	src - source structure
+	size - number of sources
+
+	Returns:
+	Cost value
+ */
+double _getError(Source src, int size)
+{
+
 }
 
 /*
@@ -134,6 +155,10 @@ void matrix_factorization(Source *src, int size, int alpha)
 double** _getW(double **w, int r, int c)
 {
 	double **copy = (double**)malloc(r * sizeof(double*));
+	if (copy == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < r; ++i) {
 		copy[i] = (double*)malloc(c * sizeof(double));
@@ -160,6 +185,10 @@ double** _getW(double **w, int r, int c)
  */
 double** _sumH(Source *src, int size) {
 	double **result = (double**)malloc(src->C * sizeof(double*));
+	if (result == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < src->C; ++i) {
 		result[i] = (double*)malloc(src->K * sizeof(double));
@@ -191,7 +220,7 @@ double** _sumH(Source *src, int size) {
  */
 void _initialize(Source *src, int size)
 {
-	double iniValue = 1 / src->C;
+	double iniValue = 1.0 / (double) src->C;
 
 	for (int n = 0; n < size; ++n) {
 		for (int i = 0; i < src[n].N; ++i) {
@@ -203,7 +232,7 @@ void _initialize(Source *src, int size)
 				}
 				if (i < src[n].C) {
 					// Item matrix
-					src[n].H[i][j] = 1 / 2;
+					src[n].H[i][j] = 1.0 / 2.0;
 				}
 				if (!tempV) {
 					src[n].V[i][j] = (tempV - src[n].min) /
@@ -229,7 +258,11 @@ void _initialize(Source *src, int size)
 	factorized matrix
  */
 double** _pos_matrix(double **matrix, int row, int col) {
-	double **temp = (double**)malloc(sizeof(double*) * row);
+	double **temp = (double**)malloc(sizeof(double*)* row);
+	if (temp == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < row; ++i) {
 		temp[i] = (double*)malloc(sizeof(double) * col);
@@ -257,6 +290,10 @@ double** _pos_matrix(double **matrix, int row, int col) {
  */
 double** _neg_matrix(double **matrix, int row, int col) {
 	double **temp = (double**)malloc(sizeof(double*)* row);
+	if (temp == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < row; ++i) {
 		temp[i] = (double*)malloc(sizeof(double)* col);
@@ -266,21 +303,4 @@ double** _neg_matrix(double **matrix, int row, int col) {
 	}
 
 	return temp;
-}
-
-/*
-	Function: clear
-	----------------
-	Internal function. Clear 2-d pointer space.
-
-	Parameters:
-	ptr - pointer space
-	r - pointer dimension
- */
-void clear(double **ptr, int r)
-{
-	for (int i = 0; i < r;) {
-		free(ptr[i]);
-	}
-	free(ptr);
 }

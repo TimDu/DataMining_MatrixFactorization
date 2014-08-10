@@ -1,14 +1,17 @@
 #include "matrix.h"
+#include "utility.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <malloc.h>
 #include <math.h>
 
 void strassen_multiply(double**, int, int, int, int, double**, int,
 	int, int, int, double**);
+double euclidean_dist(double*, double*, int);
 double** matrix_sum(double**, int, int, int, int, int, int, int, int);
 double** matrix_sub(double**, int, int, int, int, int, int, int, int);
 void matrix_pad(double***, int*, int*);
-void clear(double***, int, int);
+void _clear(double***, int, int);
 
 /*
 	Function: multiply
@@ -30,8 +33,16 @@ void clear(double***, int, int);
 double** multiply(double **a, int rA, double **b, int cB, int mid)
 {
 	double **result = (double**)malloc(rA * sizeof(double*));
+	if (result == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 	for (int i = 0; i < rA; ++i) {
 		result[i] = (double*)malloc(cB * sizeof(double));
+		if (result[i] == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 	}
 
 	if ((mid < SMALL_DIM) && (rA < SMALL_DIM) && (cB < SMALL_DIM)) {
@@ -54,6 +65,11 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 		double **a_t = (double**)malloc(rA * sizeof(double*));
 		double **b_t = (double**)malloc(mid * sizeof(double*));
 		double **c;
+		if ((rA_t == NULL) || (cB_t == NULL) || (cA_t == NULL) || (rB_t == NULL) ||
+			(a_t == NULL) || (b_t == NULL)) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 
 		*rA_t = rA;
 		*cB_t = cB;
@@ -61,12 +77,20 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 		*rB_t = mid;
 		for (int i = 0; i < rA; ++i) {
 			a_t[i] = (double*)malloc(mid * sizeof(double));
+			if (a_t[i] == NULL) {
+				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				exit(1);
+			}
 			for (int j = 0; j < mid; ++j) {
 				a_t[i][j] = a[i][j];
 			}
 		}
 		for (int i = 0; i < mid; ++i) {
 			b_t[i] = (double*)malloc(cB * sizeof(double));
+			if (b_t[i] == NULL) {
+				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				exit(1);
+			}
 			for (int j = 0; j < cB; ++j) {
 				b_t[i][j] = b[i][j];
 			}
@@ -83,8 +107,16 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 
 		// Allocate result matrix space
 		c = (double**)malloc(*rA_t * sizeof(double*));
+		if (c == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 		for (int i = 0; i < *rA_t; ++i) {
 			c[i] = (double*)malloc(*cB_t * sizeof(double));
+			if (c[i] == NULL) {
+				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				exit(1);
+			}
 		}
 
 		strassen_multiply(a_t, 0, *rA_t - 1, 0, *cA_t - 1,
@@ -101,10 +133,7 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 
 		free(a_t);
 		free(c);
-		for (int i = 0; i < mid; ++i) {
-			free(b_t[i]);
-		}
-		free(b_t);
+		clear2D(&b_t, mid);
 		free(rA_t);
 		free(rB_t);
 		free(cA_t);
@@ -136,6 +165,7 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 void strassen_multiply(
 	double **a, int rA_s, int rA_e, int cA_s, int cA_e,
 	double **b, int rB_s, int rB_e, int cB_s, int cB_e, double **c) {
+
 	if (((cA_e - cA_s) < 1) || ((rA_e - rA_s) < 1) ||
 		((cB_e - cB_s) < 1) ||
 		((cA_e - cA_s + 1 < SMALL_DIM) &&
@@ -175,42 +205,84 @@ void strassen_multiply(
 		int cA_m = (cA_s + cA_e) / 2;
 		int rB_m = (rB_s + rB_e) / 2;
 		int cB_m = (cB_s + cB_e) / 2;
+		// Temporary pointers
+		double **temp1;
+		double **temp2;
 
-		strassen_multiply(matrix_sum(a, rA_s, rA_m, cA_s, cA_m,
-			rA_m + 1, rA_e, cA_m + 1, cA_e), 0, rA_m - rA_s, 0, cA_m - cA_s,
-			matrix_sum(b, rB_s, rB_m, cB_s, cB_m, rB_m + 1, rB_e,
-			cB_m + 1, cB_e), 0, rB_m - rB_s, 0, cB_m - cB_s, m[0]);
-		strassen_multiply(matrix_sum(a, rA_m + 1, rA_e, cA_s, cA_m,
-			rA_m + 1, rA_e, cA_m + 1, cA_e), 0, rA_m - rA_s, 0, cA_m - cA_s,
+		// Matrix m1
+		temp1 = matrix_sum(a, rA_s, rA_m, cA_s, cA_m, rA_m + 1, rA_e,
+			cA_m + 1, cA_e);
+		temp2 = matrix_sum(b, rB_s, rB_m, cB_s, cB_m, rB_m + 1, rB_e,
+			cB_m + 1, cB_e);
+		strassen_multiply(temp1, 0, rA_m - rA_s, 0, cA_m - cA_s, temp2,
+			0, rB_m - rB_s, 0, cB_m - cB_s, m[0]);
+		clear2D(&temp1, rA_m - rA_s + 1);
+		clear2D(&temp2, rB_m - rB_s + 1);
+		// Matrix m2
+		temp1 = matrix_sum(a, rA_m + 1, rA_e, cA_s, cA_m, rA_m + 1,
+			rA_e, cA_m + 1, cA_e);
+		strassen_multiply(temp1, 0, rA_m - rA_s, 0, cA_m - cA_s,
 			b, rB_s, rB_m, cB_s, cB_m, m[1]);
-		strassen_multiply(a, rA_s, rA_m, cA_s, cA_m,
-			matrix_sub(b, rB_s, rB_m, cB_m + 1, cB_e, rB_m + 1, rB_e, cB_m + 1,
-			cB_e), 0, rB_m - rB_s, 0, cB_m - cB_s, m[2]);
-		strassen_multiply(a, rA_m + 1, rA_e, cA_m + 1, cA_e,
-			matrix_sub(b, rB_m + 1, rB_e, cB_s, cB_m, rB_s, rB_m, cB_s, cB_m),
+		clear2D(&temp1, rA_e - rA_m);
+		// Matrix m3
+		temp1 = matrix_sub(b, rB_s, rB_m, cB_m + 1, cB_e, rB_m + 1,
+			rB_e, cB_m + 1, cB_e);
+		strassen_multiply(a, rA_s, rA_m, cA_s, cA_m, temp1, 0,
+			rB_m - rB_s, 0, cB_m - cB_s, m[2]);
+		clear2D(&temp1, rB_m - rB_s + 1);
+		// Matrix m4
+		temp1 = matrix_sub(b, rB_m + 1, rB_e, cB_s, cB_m, rB_s, rB_m,
+			cB_s, cB_m);
+		strassen_multiply(a, rA_m + 1, rA_e, cA_m + 1, cA_e, temp1,
 			0, rB_m - rB_s, 0, cB_m - cB_s, m[3]);
-		strassen_multiply(matrix_sum(a, rA_s, rA_m, cA_s, cA_m, rA_s, rA_m,
-			cA_m + 1, cA_e), 0, rA_m - rA_s, 0, cA_m - cA_s, b, rB_m + 1, rB_e,
-			cB_m + 1, cB_e, m[4]);
-		strassen_multiply(matrix_sub(a, rA_m + 1, rA_e, cA_s, cA_m, rA_s, rA_m,
-			cA_s, cA_m), 0, rA_m - rA_s, 0, cA_m - cA_s, matrix_sum(b, rB_s,
-			rB_m, cB_s, cB_m, rB_s, rB_m, cB_m + 1, cB_e), 0, rB_m - rB_s, 0,
-			cB_m - cB_s, m[5]);
-		strassen_multiply(matrix_sub(a, rA_s, rA_m, cA_m + 1, cA_e, rA_m + 1,
-			rA_e, cA_m + 1, cA_e), 0, rA_m - rA_s, 0, cA_m - cA_s, matrix_sum(
-			b, rB_m + 1, rB_e, cB_s, cB_m, rB_m + 1, rB_e, cB_m + 1, cB_e), 0,
-			rB_m - rB_s, 0, cB_m - cB_s, m[6]);
+		clear2D(&temp1, rB_e - rB_m);
+		// Matrix m5
+		temp1 = matrix_sum(a, rA_s, rA_m, cA_s, cA_m, rA_s, rA_m,
+			cA_m + 1, cA_e);
+		strassen_multiply(temp1, 0, rA_m - rA_s, 0, cA_m - cA_s, b,
+			rB_m + 1, rB_e, cB_m + 1, cB_e, m[4]);
+		clear2D(&temp1, rA_m - rA_s + 1);
+		// Matrix m6
+		temp1 = matrix_sub(a, rA_m + 1, rA_e, cA_s, cA_m, rA_s, rA_m,
+			cA_s, cA_m);
+		temp2 = matrix_sum(b, rB_s, rB_m, cB_s, cB_m, rB_s, rB_m,
+			cB_m + 1, cB_e);
+		strassen_multiply(temp1, 0, rA_m - rA_s, 0, cA_m - cA_s,
+			temp2, 0, rB_m - rB_s, 0, cB_m - cB_s, m[5]);
+		clear2D(&temp1, rA_e - rA_m);
+		clear2D(&temp2, rB_m - rB_s);
+		// Matrix m7
+		temp1 = matrix_sub(a, rA_s, rA_m, cA_m + 1, cA_e, rA_m + 1,
+			rA_e, cA_m + 1, cA_e);
+		temp2 = matrix_sum(b, rB_m + 1, rB_e, cB_s, cB_m, rB_m + 1,
+			rB_e, cB_m + 1, cB_e);
+		strassen_multiply(temp1, 0, rA_m - rA_s, 0, cA_m - cA_s, temp2,
+			0, rB_m - rB_s, 0, cB_m - cB_s, m[6]);
+		clear2D(&temp1, rA_m - rA_s + 1);
+		clear2D(&temp2, rB_e - rB_m);
 
 		// Calculates all result sub-matrices
-		c_sub[0] = sum(sub(sum(m[0], m[3], mR / 2, mC / 2),
-			m[4], mR / 2, mC / 2), m[6], mR / 2, mC / 2);
+		temp1 = sum(m[0], m[3], mR / 2, mC / 2);
+		temp2 = sub(temp1, m[4], mR / 2, mC / 2);
+		c_sub[0] = sum(temp2, m[6], mR / 2, mC / 2);
+		clear2D(&temp1, mR / 2);
+		clear2D(&temp2, mR / 2);
 		c_sub[1] = sum(m[2], m[4], mR / 2, mC / 2);
 		c_sub[2] = sum(m[1], m[3], mR / 2, mC / 2);
-		c_sub[3] = sub(sum(sum(m[0], m[2], mR / 2, mC / 2),
-			m[5], mR / 2, mC / 2), m[1], mR / 2, mC / 2);
+		temp1 = sum(m[0], m[2], mR / 2, mC / 2);
+		temp2 = sum(temp1, m[5], mR / 2, mC / 2);
+		c_sub[3] = sub(temp2, m[1], mR / 2, mC / 2);
+		clear2D(&temp1, mR / 2);
+		clear2D(&temp2, mR / 2);
 
 		// Free intermediate matrices
-		clear(m, 7, mR / 2);
+		for (int i = 0; i < 7; ++i) {
+			for (int j = 0; j < mR / 2; ++j) {
+				free(m[i][j]);
+			}
+			free(m[i]);
+		}
+		free(m);
 
 		// Combine sub-matrices
 		for (int i = 0; i < 4; ++i) {
@@ -223,7 +295,13 @@ void strassen_multiply(
 		}
 
 		// Free sub mmatrices
-		clear(c_sub, 4, mR / 2);
+		for (int i = 0; i < 4; ++i) {
+			for (int j = 0; j < mR / 2; ++j) {
+				free(c_sub[i][j]);
+			}
+			free(c_sub[i]);
+		}
+		free(c_sub);
 	}
 }
 
@@ -244,9 +322,17 @@ void strassen_multiply(
 double** sum(double **a, double **b, int r, int c)
 {
 	double **result = (double**)malloc(r * sizeof(double*));
+	if (result == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < r; ++i) {
 		result[i] = (double*)malloc(c * sizeof(double));
+		if (result[i] == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 		for (int j = 0; j < c; ++j) {
 			result[i][j] = a[i][j] + b[i][j];
 		}
@@ -272,9 +358,17 @@ double** sum(double **a, double **b, int r, int c)
 double** sub(double **a, double **b, int r, int c)
 {
 	double **result = (double**)malloc(r * sizeof(double*));
+	if (result == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < r; ++i) {
 		result[i] = (double*)malloc(c * sizeof(double));
+		if (result[i] == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 		for (int j = 0; j < c; ++j) {
 			result[i][j] = a[i][j] - b[i][j];
 		}
@@ -299,15 +393,143 @@ double** sub(double **a, double **b, int r, int c)
 double** transpose(double **a, int r, int c)
 {
 	double **trans = (double**)malloc(c * sizeof(double*));
+	if (trans == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < c; ++i) {
 		trans[i] = (double*)malloc(r * sizeof(double));
+		if (trans[i] == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 		for (int j = 0; j < r; ++j) {
-			trans[c][r] = a[r][c];
+			trans[i][j] = a[j][i];
 		}
 	}
 
 	return trans;
+}
+
+/*
+	Function: eigen
+	----------------
+	Find the largest eigenvalue from the matrix.
+
+	Parameters:
+	a - square matrix to be calculated
+	n - dimension of its column/row space
+
+	Returns:
+	the largest eigenvalue
+*/
+double eigenL(double **a, int n)
+{
+	int parity = 0;	// Parity of loop rounds 
+	double result = 0;
+	double norm = 0;
+	double **eigV = (double**)malloc(2 * sizeof(double*));
+	double *temp = (double*)malloc(n * sizeof(double));
+	if ((eigV == NULL) || temp == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
+
+	// Initialization
+	for (int i = 0; i < 2; ++i) {
+		eigV[i] = (double*)malloc(n * sizeof(double));
+		if (eigV[i] == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
+		for (int j = 0; j < n; ++j) {
+			eigV[i][j] = i;
+		}
+	}
+	int loop = 0;
+	// Fond approximate eigenvector
+	while (euclidean_dist(
+		eigV[(parity + 1) % 2], eigV[parity], n) > 1e-10) {
+		for (int i = 0; i < n; ++i) {
+			temp[i] = 0;
+			for (int j = 0; j < n; ++j) {
+				temp[i] += a[i][j] * eigV[(parity + 1) % 2][j];
+			}
+			norm += pow(temp[i], 2);
+		}
+		norm = sqrt(norm);
+
+		// Normalization
+		for (int i = 0; i < n; ++i) {
+			eigV[parity][i] = temp[i] / norm;
+		}
+		++parity;
+		parity = parity % 2;
+	}
+
+	// Find eigenvalue
+	for (int i = 0; i < n; ++i) {
+		temp[i] = 0;
+		for (int j = 0; j < n; ++j) {
+			temp[i] += a[i][j] * eigV[(parity + 1) % 2][j];
+		}
+		result += temp[i] / eigV[(parity + 1) % 2][i];
+	}
+	result = result / n;
+
+	return result;
+}
+
+/*
+	Function: norm
+	---------------------
+	Calculates matrix's 2-norm value.
+
+	Parameters:
+	a - a matrix
+	r - row number
+	c - column number
+
+	Returns:
+	entrywise norm of this matrix
+*/
+double norm(double **a, int r, int c)
+{
+	double result = 0;
+	double **temp = transpose(a, r, c);
+	double **sqr = multiply(temp, c, a, c, r);
+	result = eigenL(sqr, c);
+	result = sqrt(result);
+	
+	clear2D(&temp, r);
+	clear2D(&sqr, c);
+	return result;
+}
+
+/*
+	Function: euclidean_dist
+	-------------------------
+	Internal function. Calculates distance between two vectors.
+
+	Parameters:
+	a - vector A
+	b - vector b
+	dim - dimension of vector
+
+	Returns:
+	result euclidean distance
+*/
+double euclidean_dist(double *a, double *b, int dim)
+{
+	double dist = 0;
+
+	for (int i = 0; i < dim; ++i) {
+		dist += pow(a[i] - b[i], 2);
+	}
+	dist = sqrt(dist);
+
+	return dist;
 }
 
 /*
@@ -335,9 +557,17 @@ double** matrix_sum(double **a, int r1_s, int r1_e, int c1_s, int c1_e,
 	int rSize = r1_e - r1_s + 1;
 	int cSize = c1_e - c1_s + 1;
 	double **result = (double**)malloc(rSize * sizeof(double*));
+	if (result == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < rSize; ++i) {
 		result[i] = (double*)malloc(cSize * sizeof(double));
+		if (result[i] == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
 		for (int j = 0; j < cSize; ++j) {
 			result[i][j] = a[i + r1_s][j + c1_s] + a[i + r2_s][j + c2_s];
 		}
@@ -372,6 +602,10 @@ double** matrix_sub(double **a, int r1_s, int r1_e, int c1_s, int c1_e,
 	int rSize = r1_e - r1_s + 1;
 	int cSize = c1_e - c1_s + 1;
 	double **result = (double**)malloc(rSize * sizeof(double*));
+	if (result == NULL) {
+		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		exit(1);
+	}
 
 	for (int i = 0; i < rSize; ++i) {
 		result[i] = (double*)malloc(cSize * sizeof(double));
@@ -402,6 +636,10 @@ void matrix_pad(double ***a, int *r, int *c) {
 	if (cPad > *c) {
 		for (int i = 0; i < *r; ++i) {
 			a[0][i] = (double*)realloc(a[0][i], cPad * sizeof(double));
+			if (a[0][i] == NULL) {
+				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				exit(1);
+			}
 			for (int j = *c; j < cPad; ++j) {
 				a[0][i][j] = 0;	// Pads columns
 			}
@@ -409,8 +647,18 @@ void matrix_pad(double ***a, int *r, int *c) {
 	}
 	if (rPad > *r) {
 		a[0] = (double**)realloc(a[0], rPad * sizeof(double*));
+		if (a[0] == NULL) {
+			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			exit(1);
+		}
+
 		for (int i = *r; i < rPad; ++i) {
 			a[0][i] = (double*)malloc(cPad * sizeof(double));
+			if (a[0][i] == NULL) {
+				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				exit(1);
+			}
+
 			for (int j = 0; j < cPad; ++j) {
 				a[0][i][j] = 0;	// Pads rows
 			}
@@ -431,7 +679,7 @@ void matrix_pad(double ***a, int *r, int *c) {
 	dim1 - pointer dimension 1
 	dim2 - pointer dimemsion 2
  */
-void clear(double ***ptr, int dim1, int dim2)
+void _clear(double ***ptr, int dim1, int dim2)
 {
 	for (int i = 0; i < dim1; ++i) {
 		for (int j = 0; j < dim2; ++j) {
