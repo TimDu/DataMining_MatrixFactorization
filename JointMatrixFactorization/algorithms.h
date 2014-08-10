@@ -4,6 +4,6 @@
 #include "utility.h"
 #include "matrix.h"
 
-void matrix_factorization(Source *src, int size, int alpha);
+void matrix_factorization(Source *src, int size, double alpha);
 
 #endif

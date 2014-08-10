@@ -3,11 +3,14 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define MAX_LOOP 1000
+
 double **_getW(double**, int, int);
 double** _sumH(Source*, int);
 void _initialize(Source*, int);
 double** _pos_matrix(double**, int, int);
 double** _neg_matrix(double**, int, int);
+double _getCost(Source*, int, double);
 
 /*
 	Function: matrix_factorization
@@ -19,8 +22,12 @@ double** _neg_matrix(double**, int, int);
 	size - number of sources
 	valC - group number
  */
-void matrix_factorization(Source *src, int size, int alpha)
+void matrix_factorization(Source *src, int size, double alpha)
 {
+	int loop = 0;
+	// Function cost
+	double old_cost = 0;
+	double cost;
 	// Matrices componnents
 	double **vh;
 	double **n_vh;
@@ -45,21 +52,27 @@ void matrix_factorization(Source *src, int size, int alpha)
 	n_sum_h = _neg_matrix(sum_h, src->C, src->K);
 	sum_h = _pos_matrix(sum_h, src->C, src->K);
 	clear2D(&temp, src->C);
-
-	while (true) {
+	cost = _getCost(src, size, alpha);
+	printf("%f ", cost);
+	while ((fabs(old_cost - cost) > 1.0e-10) && (loop < MAX_LOOP)) {
+		++loop; printf(" %d\n", loop);
+		old_cost = cost;
 		// Loop until converge
 		for (int i = 0; i < size; ++i) {
 			// Computes components for W matrix update
 			trans = transpose(src[i].H, src[i].C, src[i].K);
 
-			vh = multiply(src[i].V, src[i].N, trans, src[i].C, src[i].K);
+			vh = multiply(
+				src[i].V, src[i].N, trans, src[i].C, src[i].K);
 			temp = vh;
 			n_vh = _neg_matrix(vh, src[i].N, src[i].C);
 			vh = _pos_matrix(vh, src[i].N, src[i].C);
 			clear2D(&temp, src[i].N);
 
-			temp = multiply(src[i].H, src[i].C, trans, src[i].C, src[i].K);
-			whh = multiply(src[i].W, src[i].N, temp, src[i].C, src[i].C);
+			temp = multiply(
+				src[i].H, src[i].C, trans, src[i].C, src[i].K);
+			whh = multiply(
+				src[i].W, src[i].N, temp, src[i].C, src[i].C);
 			clear2D(&temp, src[i].C);
 			temp = whh;
 			n_whh = _neg_matrix(whh, src[i].N, src[i].C);
@@ -72,7 +85,8 @@ void matrix_factorization(Source *src, int size, int alpha)
 			for (int j = 0; j < src->N; ++j) {
 				for (int k = 0; k < src->C; ++k) {
 					src[i].W[j][k] = src[i].W[j][k] * sqrt(
-						(vh[j][k] + n_whh[j][k]) / (n_vh[j][k] + whh[j][k]));
+						(vh[j][k] + n_whh[j][k]) /
+						(n_vh[j][k] + whh[j][k]));
 				}
 			}
 
@@ -84,14 +98,16 @@ void matrix_factorization(Source *src, int size, int alpha)
 			// Computes components for H matrix update
 			trans = transpose(w, src[i].N, src[i].C);
 
-			wv = multiply(trans, src[i].C, src[i].V, src[i].K, src[i].N);
+			wv = multiply(
+				trans, src[i].C, src[i].V, src[i].K, src[i].N);
 			temp = wv;
 			n_wv = _neg_matrix(wv, src[i].C, src[i].K);
 			wv = _pos_matrix(wv, src[i].C, src[i].K);
 			clear2D(&temp, src[i].C);
 
 			temp = multiply(trans, src[i].C, w, src[i].C, src[i].N);
-			wwh = multiply(temp, src[i].C, src[i].H, src[i].K, src[i].C);
+			wwh = multiply(
+				temp, src[i].C, src[i].H, src[i].K, src[i].C);
 			clear2D(&temp, src[i].C);
 			temp = wwh;
 			n_wwh = _neg_matrix(wwh, src[i].C, src[i].K);
@@ -104,9 +120,11 @@ void matrix_factorization(Source *src, int size, int alpha)
 			for (int j = 0; j < src[i].C; ++j) {
 				for (int k = 0; k < src[i].K; ++k) {
 					src[i].H[j][k] = src[i].H[j][k] * sqrt(
-						(wv[j][k] + n_wwh[j][k] + alpha * size * n_h[j][k] +
+						(wv[j][k] + n_wwh[j][k] +
+						alpha * size * n_h[j][k] +
 						alpha * (sum_h[j][k] - h[j][k])) /
-						(n_wv[j][k] + wwh[j][k] + alpha * size * h[j][k] +
+						(n_wv[j][k] + wwh[j][k] +
+						alpha * size * h[j][k] +
 						alpha * (n_sum_h[j][k] - n_h[j][k])));
 				}
 			}
@@ -118,11 +136,20 @@ void matrix_factorization(Source *src, int size, int alpha)
 			clear2D(&h, src[i].C);
 			clear2D(&n_h, src[i].C);
 		}
+		clear2D(&sum_h, src->C);
+		sum_h = _sumH(src, size);
+		temp = sum_h;
+		n_sum_h = _neg_matrix(sum_h, src->C, src->K);
+		sum_h = _pos_matrix(sum_h, src->C, src->K);
+		clear2D(&temp, src->C);
+		cost = _getCost(src, size, alpha);
+		printf("%f ", cost);
 	}
+	printf("\n");
 }
 
 /*
-	Function: _getError
+	Function: _getCost
 	--------------------
 	Internal function. Calculate total cost with current
 	matrices W and H.
@@ -134,9 +161,34 @@ void matrix_factorization(Source *src, int size, int alpha)
 	Returns:
 	Cost value
  */
-double _getError(Source src, int size)
+double _getCost(Source *src, int size, double alpha)
 {
+	double result = 0;
+	double tempH = 0;
+	double **wh;
+	double **temp;
 
+	// Calculate squared norms of all (Hs - Ht)
+	for (int i = 0; i < size; ++i) {
+		for (int j = i; j < size; ++j) {
+
+			temp = sub(src[i].H, src[j].H, src[i].C, src[i].K);
+			tempH += norm2(temp, src[i].C, src[i].K);
+			clear2D(&temp, src[i].C);
+		}
+	}
+	tempH = tempH * alpha * 2;
+	for (int i = 0; i < size; ++i) {
+		wh = multiply(
+			src[i].W, src[i].N, src[i].H, src[i].K, src[i].C);
+		temp = sub(src[i].V, wh, src[i].N, src[i].K);
+		clear2D(&wh, src[i].N);
+		result += norm2(temp, src[i].N, src[i].K);
+		clear2D(&temp, src[i].N);
+	}
+	result += tempH;
+
+	return result;
 }
 
 /*
@@ -156,7 +208,8 @@ double** _getW(double **w, int r, int c)
 {
 	double **copy = (double**)malloc(r * sizeof(double*));
 	if (copy == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
@@ -186,7 +239,8 @@ double** _getW(double **w, int r, int c)
 double** _sumH(Source *src, int size) {
 	double **result = (double**)malloc(src->C * sizeof(double*));
 	if (result == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
@@ -260,7 +314,8 @@ void _initialize(Source *src, int size)
 double** _pos_matrix(double **matrix, int row, int col) {
 	double **temp = (double**)malloc(sizeof(double*)* row);
 	if (temp == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
@@ -291,7 +346,8 @@ double** _pos_matrix(double **matrix, int row, int col) {
 double** _neg_matrix(double **matrix, int row, int col) {
 	double **temp = (double**)malloc(sizeof(double*)* row);
 	if (temp == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 

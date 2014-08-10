@@ -7,6 +7,7 @@
 
 void strassen_multiply(double**, int, int, int, int, double**, int,
 	int, int, int, double**);
+double eigenL(double**, int);
 double euclidean_dist(double*, double*, int);
 double** matrix_sum(double**, int, int, int, int, int, int, int, int);
 double** matrix_sub(double**, int, int, int, int, int, int, int, int);
@@ -415,7 +416,7 @@ double** transpose(double **a, int r, int c)
 /*
 	Function: eigen
 	----------------
-	Find the largest eigenvalue from the matrix.
+	Internal function. Find the largest eigenvalue from the matrix.
 
 	Parameters:
 	a - square matrix to be calculated
@@ -448,9 +449,9 @@ double eigenL(double **a, int n)
 		}
 	}
 	int loop = 0;
-	// Fond approximate eigenvector
+	// Find approximate eigenvector
 	while (euclidean_dist(
-		eigV[(parity + 1) % 2], eigV[parity], n) > 1e-10) {
+		eigV[(parity + 1) % 2], eigV[parity], n) > 1.0e-10) {
 		for (int i = 0; i < n; ++i) {
 			temp[i] = 0;
 			for (int j = 0; j < n; ++j) {
@@ -460,23 +461,35 @@ double eigenL(double **a, int n)
 		}
 		norm = sqrt(norm);
 
-		// Normalization
-		for (int i = 0; i < n; ++i) {
-			eigV[parity][i] = temp[i] / norm;
+		if (norm != 0) {
+			// Normalization
+			for (int i = 0; i < n; ++i) {
+				eigV[parity][i] = temp[i] / norm;
+			}
+			++parity;
+			parity = parity % 2;
 		}
-		++parity;
-		parity = parity % 2;
+		else {
+			// This is a null space
+			break;
+		}
 	}
 
 	// Find eigenvalue
+	int count = 0;
 	for (int i = 0; i < n; ++i) {
-		temp[i] = 0;
-		for (int j = 0; j < n; ++j) {
-			temp[i] += a[i][j] * eigV[(parity + 1) % 2][j];
+		if (eigV[(parity + 1) % 2][i] != 0) {
+			temp[i] = 0;
+			for (int j = 0; j < n; ++j) {
+				temp[i] += a[i][j] * eigV[(parity + 1) % 2][j];
+			}
+			result += temp[i] / eigV[(parity + 1) % 2][i];
+			++count;
 		}
-		result += temp[i] / eigV[(parity + 1) % 2][i];
 	}
-	result = result / n;
+	if (count != 0) {
+		result = result / count;
+	}
 
 	return result;
 }
@@ -496,13 +509,30 @@ double eigenL(double **a, int n)
 */
 double norm(double **a, int r, int c)
 {
+	return sqrt(norm2(a, r, c));
+}
+
+/*
+	Function: norm2
+	---------------------
+	Calculates matrix's squared value of its 2-norm.
+
+	Parameters:
+	a - a matrix
+	r - row number
+	c - column number
+
+	Returns:
+	entrywise norm of this matrix
+*/
+double norm2(double **a, int r, int c)
+{
 	double result = 0;
 	double **temp = transpose(a, r, c);
 	double **sqr = multiply(temp, c, a, c, r);
 	result = eigenL(sqr, c);
-	result = sqrt(result);
-	
-	clear2D(&temp, r);
+
+	clear2D(&temp, c);
 	clear2D(&sqr, c);
 	return result;
 }
