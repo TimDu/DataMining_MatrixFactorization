@@ -12,7 +12,6 @@ double euclidean_dist(double*, double*, int);
 double** matrix_sum(double**, int, int, int, int, int, int, int, int);
 double** matrix_sub(double**, int, int, int, int, int, int, int, int);
 void matrix_pad(double***, int*, int*);
-void _clear(double***, int, int);
 
 /*
 	Function: multiply
@@ -35,13 +34,15 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 {
 	double **result = (double**)malloc(rA * sizeof(double*));
 	if (result == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 	for (int i = 0; i < rA; ++i) {
 		result[i] = (double*)malloc(cB * sizeof(double));
 		if (result[i] == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 	}
@@ -68,7 +69,8 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 		double **c;
 		if ((rA_t == NULL) || (cB_t == NULL) || (cA_t == NULL) || (rB_t == NULL) ||
 			(a_t == NULL) || (b_t == NULL)) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 
@@ -79,7 +81,8 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 		for (int i = 0; i < rA; ++i) {
 			a_t[i] = (double*)malloc(mid * sizeof(double));
 			if (a_t[i] == NULL) {
-				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+				getchar();
 				exit(1);
 			}
 			for (int j = 0; j < mid; ++j) {
@@ -89,7 +92,8 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 		for (int i = 0; i < mid; ++i) {
 			b_t[i] = (double*)malloc(cB * sizeof(double));
 			if (b_t[i] == NULL) {
-				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+				getchar();
 				exit(1);
 			}
 			for (int j = 0; j < cB; ++j) {
@@ -101,40 +105,35 @@ double** multiply(double **a, int rA, double **b, int cB, int mid)
 		matrix_pad(&a_t, rA_t, cA_t);
 		matrix_pad(&b_t, rB_t, cB_t);
 
-		if (*cA_t != *rB_t) {
-			fprintf(stderr, "Fatal Error: matrix dimension doesn't match.\n");
-			return NULL;
-		}
-
 		// Allocate result matrix space
 		c = (double**)malloc(*rA_t * sizeof(double*));
 		if (c == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 		for (int i = 0; i < *rA_t; ++i) {
 			c[i] = (double*)malloc(*cB_t * sizeof(double));
 			if (c[i] == NULL) {
-				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+				getchar();
 				exit(1);
 			}
 		}
 
 		strassen_multiply(a_t, 0, *rA_t - 1, 0, *cA_t - 1,
-			b_t, 0, *cA_t - 1, 0, *cB_t - 1, c);
+			b_t, 0, *rB_t - 1, 0, *cB_t - 1, c);
 
 		// Restore to result matrix and clean memory
 		for (int i = 0; i < rA; ++i) {
-			free(a_t[i]);
 			for (int j = 0; j < cB; ++j) {
 				result[i][j] = c[i][j];
 			}
-			free(c[i]);
 		}
 
-		free(a_t);
-		free(c);
-		clear2D(&b_t, mid);
+		clear2D(&a_t, *rA_t);
+		clear2D(&b_t, *rB_t);
+		clear2D(&c, *rA_t);
 		free(rA_t);
 		free(rB_t);
 		free(cA_t);
@@ -194,12 +193,6 @@ void strassen_multiply(
 				m[i][j] = (double*)malloc((mC / 2) * sizeof(double));
 			}
 		}
-		for (int i = 0; i < 4; ++i) {
-			c_sub[i] = (double**)malloc((mR / 2) * sizeof(double*));
-			for (int j = 0; j < mR / 2; ++j) {
-				c_sub[i][j] = (double*)malloc((mC / 2) * sizeof(double));
-			}
-		}
 
 		// Gets results of 7 intermediate matrices
 		int rA_m = (rA_s + rA_e) / 2;
@@ -251,7 +244,7 @@ void strassen_multiply(
 		strassen_multiply(temp1, 0, rA_m - rA_s, 0, cA_m - cA_s,
 			temp2, 0, rB_m - rB_s, 0, cB_m - cB_s, m[5]);
 		clear2D(&temp1, rA_e - rA_m);
-		clear2D(&temp2, rB_m - rB_s);
+		clear2D(&temp2, rB_m - rB_s + 1);
 		// Matrix m7
 		temp1 = matrix_sub(a, rA_s, rA_m, cA_m + 1, cA_e, rA_m + 1,
 			rA_e, cA_m + 1, cA_e);
@@ -324,14 +317,16 @@ double** sum(double **a, double **b, int r, int c)
 {
 	double **result = (double**)malloc(r * sizeof(double*));
 	if (result == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
 	for (int i = 0; i < r; ++i) {
 		result[i] = (double*)malloc(c * sizeof(double));
 		if (result[i] == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 		for (int j = 0; j < c; ++j) {
@@ -360,14 +355,16 @@ double** sub(double **a, double **b, int r, int c)
 {
 	double **result = (double**)malloc(r * sizeof(double*));
 	if (result == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
 	for (int i = 0; i < r; ++i) {
 		result[i] = (double*)malloc(c * sizeof(double));
 		if (result[i] == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 		for (int j = 0; j < c; ++j) {
@@ -395,14 +392,16 @@ double** transpose(double **a, int r, int c)
 {
 	double **trans = (double**)malloc(c * sizeof(double*));
 	if (trans == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
 	for (int i = 0; i < c; ++i) {
 		trans[i] = (double*)malloc(r * sizeof(double));
 		if (trans[i] == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 		for (int j = 0; j < r; ++j) {
@@ -433,7 +432,8 @@ double eigenL(double **a, int n)
 	double **eigV = (double**)malloc(2 * sizeof(double*));
 	double *temp = (double*)malloc(n * sizeof(double));
 	if ((eigV == NULL) || temp == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
@@ -441,7 +441,8 @@ double eigenL(double **a, int n)
 	for (int i = 0; i < 2; ++i) {
 		eigV[i] = (double*)malloc(n * sizeof(double));
 		if (eigV[i] == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 		for (int j = 0; j < n; ++j) {
@@ -491,6 +492,8 @@ double eigenL(double **a, int n)
 		result = result / count;
 	}
 
+	clear2D(&eigV, 2);
+	free(temp);
 	return result;
 }
 
@@ -588,14 +591,16 @@ double** matrix_sum(double **a, int r1_s, int r1_e, int c1_s, int c1_e,
 	int cSize = c1_e - c1_s + 1;
 	double **result = (double**)malloc(rSize * sizeof(double*));
 	if (result == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
 	for (int i = 0; i < rSize; ++i) {
 		result[i] = (double*)malloc(cSize * sizeof(double));
 		if (result[i] == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 		for (int j = 0; j < cSize; ++j) {
@@ -633,7 +638,8 @@ double** matrix_sub(double **a, int r1_s, int r1_e, int c1_s, int c1_e,
 	int cSize = c1_e - c1_s + 1;
 	double **result = (double**)malloc(rSize * sizeof(double*));
 	if (result == NULL) {
-		fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
 		exit(1);
 	}
 
@@ -667,7 +673,8 @@ void matrix_pad(double ***a, int *r, int *c) {
 		for (int i = 0; i < *r; ++i) {
 			a[0][i] = (double*)realloc(a[0][i], cPad * sizeof(double));
 			if (a[0][i] == NULL) {
-				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+				getchar();
 				exit(1);
 			}
 			for (int j = *c; j < cPad; ++j) {
@@ -678,14 +685,16 @@ void matrix_pad(double ***a, int *r, int *c) {
 	if (rPad > *r) {
 		a[0] = (double**)realloc(a[0], rPad * sizeof(double*));
 		if (a[0] == NULL) {
-			fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+			fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+			getchar();
 			exit(1);
 		}
 
 		for (int i = *r; i < rPad; ++i) {
 			a[0][i] = (double*)malloc(cPad * sizeof(double));
 			if (a[0][i] == NULL) {
-				fprintf(stderr, "Fatal Error: Program ran out of memory!\n");
+				fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+				getchar();
 				exit(1);
 			}
 
@@ -697,25 +706,4 @@ void matrix_pad(double ***a, int *r, int *c) {
 
 	*r = rPad;
 	*c = cPad;
-}
-
-/*
-	Function: clear
-	----------------
-	Internal function. Clear 3-d pointer space
-
-	Parameters:
-	ptr - pointer to be cleared
-	dim1 - pointer dimension 1
-	dim2 - pointer dimemsion 2
- */
-void _clear(double ***ptr, int dim1, int dim2)
-{
-	for (int i = 0; i < dim1; ++i) {
-		for (int j = 0; j < dim2; ++j) {
-			free(ptr[i][j]);
-		}
-		free(ptr[i]);
-	}
-	free(ptr);
 }

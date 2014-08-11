@@ -82,12 +82,26 @@ int find_index(Item *items, char *item, int start, int end)
  */
 double find_number(char *str)
 {
+	bool hasDecimal = false;
 	int index = 0;
 	char num[20];
 
 	// Finds a valid number string
 	for (int i = 0; i < (int) strlen(str); ++i) {
-		if (((str[i] > '9') && (str[i] < '0')) || (str[i] == '.')) {
+		if ((str[i] > '9') && (str[i] < '0')) {
+			if (str[i] == '.') {
+				if (!hasDecimal) {
+					hasDecimal = true;
+					num[index] = str[i];
+					++index;
+					if (index > (sizeof(num) / sizeof(num[0]))) {
+						printf("Warning: An integer value is truncated due "
+							"to the excessive amount of digits!");
+						break;
+					}
+					continue;
+				}
+			}
 			if (index != 0) {
 				num[index] = '\0';
 				break;

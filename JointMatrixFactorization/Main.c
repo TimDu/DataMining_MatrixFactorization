@@ -108,7 +108,8 @@ int main()
 			printf("\n");
 
 			while (true) {
-				int val_c, alpha;
+				int val_c;
+				double alpha;
 
 				// Enter number of groups
 				printf("%s: ", cmd3);
@@ -141,7 +142,7 @@ int main()
 						goto Ending;
 					}
 
-					if ((alpha = (int) find_number(cmd)) > 0) {
+					if ((alpha = find_number(cmd)) > 0) {
 						// Initialize joint matrices
 						joints_initialize(source, srcSz, val_c);
 						// Perform algorithms

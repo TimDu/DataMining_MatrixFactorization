@@ -7,6 +7,7 @@
 
 double **_getW(double**, int, int);
 double** _sumH(Source*, int);
+double** _n_sumH(Source*, int);
 void _initialize(Source*, int);
 double** _pos_matrix(double**, int, int);
 double** _neg_matrix(double**, int, int);
@@ -47,16 +48,15 @@ void matrix_factorization(Source *src, int size, double alpha)
 	double **temp = NULL;	// Pointer used to free memory
 
 	_initialize(src, size);
-	sum_h = _sumH(src, size);
-	temp = sum_h;
-	n_sum_h = _neg_matrix(sum_h, src->C, src->K);
-	sum_h = _pos_matrix(sum_h, src->C, src->K);
-	clear2D(&temp, src->C);
+
 	cost = _getCost(src, size, alpha);
 	printf("%f ", cost);
-	while ((fabs(old_cost - cost) > 1.0e-10) && (loop < MAX_LOOP)) {
+	while ((fabs(old_cost - cost) > 1.0e-8) && (loop < MAX_LOOP)) {
 		++loop; printf(" %d\n", loop);
 		old_cost = cost;
+
+		sum_h = _sumH(src, size);
+		n_sum_h = _n_sumH(src, size);
 		// Loop until converge
 		for (int i = 0; i < size; ++i) {
 			// Computes components for W matrix update
@@ -106,6 +106,7 @@ void matrix_factorization(Source *src, int size, double alpha)
 			clear2D(&temp, src[i].C);
 
 			temp = multiply(trans, src[i].C, w, src[i].C, src[i].N);
+			clear2D(trans, src[i].N);
 			wwh = multiply(
 				temp, src[i].C, src[i].H, src[i].K, src[i].C);
 			clear2D(&temp, src[i].C);
@@ -129,6 +130,7 @@ void matrix_factorization(Source *src, int size, double alpha)
 				}
 			}
 
+			clear2D(&w, src[i].N);
 			clear2D(&wv, src[i].C);
 			clear2D(&n_wv, src[i].C);
 			clear2D(&wwh, src[i].C);
@@ -137,15 +139,28 @@ void matrix_factorization(Source *src, int size, double alpha)
 			clear2D(&n_h, src[i].C);
 		}
 		clear2D(&sum_h, src->C);
-		sum_h = _sumH(src, size);
-		temp = sum_h;
-		n_sum_h = _neg_matrix(sum_h, src->C, src->K);
-		sum_h = _pos_matrix(sum_h, src->C, src->K);
-		clear2D(&temp, src->C);
+		clear2D(&n_sum_h, src->C);
+
 		cost = _getCost(src, size, alpha);
 		printf("%f ", cost);
 	}
 	printf("\n");
+	FILE *f = (FILE*)malloc(sizeof(FILE));
+	fopen_s(&f, "example.txt", "w");
+	for (int i = 0; i < src->N; ++i) {
+		for (int j = 0; j < src->K; ++j) {
+			fprintf(f, "%3.1f ", src->V[i][j]);
+		}
+		fprintf(f, "\n");
+	}
+	fprintf(f, "\n");
+	double **wh = multiply(src->W, src->N, src->H, src->K, src->C);
+	for (int i = 0; i < src->N; ++i) {
+		for (int j = 0; j < src->K; ++j) {
+			fprintf(f, "%3.1f ", wh[i][j]);
+		}
+		fprintf(f, "\n");
+	}
 }
 
 /*
@@ -254,7 +269,46 @@ double** _sumH(Source *src, int size) {
 	for (int i = 0; i < size; ++i) {
 		for (int j = 0; j < src->C; ++j) {
 			for (int k = 0; k < src->K; ++k) {
-				result[j][k] += src[i].H[j][k];
+				result[j][k] += (src[i].H[j][k] > 0) ? src[i].H[j][k] : 0;
+			}
+		}
+	}
+
+	return result;
+}
+
+/*
+	Function: _n_sumH
+	----------------
+	Internal function. Sum up all item-group matrices.
+	NOTE: Each source has same items in it.
+
+	Parameters:
+	src - source structures array
+	size - size of source array
+
+	Returns:
+	Sum of H matrices from all sources
+*/
+double** _n_sumH(Source *src, int size) {
+	double **result = (double**)malloc(src->C * sizeof(double*));
+	if (result == NULL) {
+		fprintf(stderr, "Fatal Error: Program runs out of memory!\n");
+		getchar();
+		exit(1);
+	}
+
+	for (int i = 0; i < src->C; ++i) {
+		result[i] = (double*)malloc(src->K * sizeof(double));
+		for (int j = 0; j < src->K; ++j) {
+			result[i][j] = 0;
+		}
+	}
+
+	for (int i = 0; i < size; ++i) {
+		for (int j = 0; j < src->C; ++j) {
+			for (int k = 0; k < src->K; ++k) {
+				result[j][k] += (src[i].H[j][k] < 0) ? src[i].H[j][k] : 0;
 			}
 		}
 	}
