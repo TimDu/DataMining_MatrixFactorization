@@ -36,7 +36,7 @@ int file_to_matrix(FILE *file, Source *src)
 				seg[1] = strtok_s(NULL, _SEP, &token);
 
 				if (seg[1] != NULL) {
-					nIndex = find_number(seg[1]);
+					nIndex = (int) find_number(seg[1]);
 					seg[2] = strtok_s(NULL, _SEP, &token);
 
 					if ((nIndex > 0) && (seg[2] != NULL)) {

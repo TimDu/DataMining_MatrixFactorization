@@ -155,6 +155,8 @@ void inputs_initialize(Source *src)
 
 	src->min = -1;
 	src->max = -1;
+	src->W = NULL;
+	src->H = NULL;
 }
 
 /*
@@ -164,6 +166,8 @@ void inputs_initialize(Source *src)
  
 	Parameter:
 	src - the object source to be initialized
+	size - size of sources
+	val_c - group number
  */
 void joints_initialize(Source *src, int size, int val_c)
 {
@@ -200,6 +204,32 @@ void joints_initialize(Source *src, int size, int val_c)
 }
 
 /*
+	Function: joint_clear
+	----------------------
+	Clears joint matrices.
+
+	Parameters:
+	src - source structure
+	size - size of sources
+ */
+void joint_clear(Source *src, int size)
+{
+	for (int i = 0; i < size; ++i) {
+		if (src[i].W != NULL) {
+			free(src[i].W[0]);
+			free(src[i].W);
+			src[i].W = NULL;
+		}
+		if (src[i].H != NULL) {
+			free(src[i].H[0]);
+			free(src[i].H);
+			src[i].H = NULL;
+		}
+		src[i].C = 0;
+	}
+}
+
+/*
 	Function: clear2D
 	----------------
 	Clear 2-d pointer space.
@@ -215,4 +245,34 @@ void clear2D(double ***ptr, int r)
 		free(ary[i]);
 	}
 	free(ary);
+}
+
+/*
+	Function: reset
+	----------------
+	Clears status of source structure.
+
+	Parameters:
+	src - source structure
+	size - size of sources
+ */
+void reset(Source *src, int size)
+{
+	for (int i = 0; i < size; ++i) {
+		free(src[i].V[0]);
+		free(src[i].V);
+		if (src[i].W != NULL) {
+			free(src[i].W[0]);
+			free(src[i].W);
+		}
+		if (src[i].H != NULL) {
+			free(src[i].H[0]);
+			free(src[i].H);
+		}
+		for (int j = 0; j < src[i].K; ++j) {
+			free(src[i].items[j].name);
+		}
+		free(src[i].items);
+	}
+	free(src);
 }

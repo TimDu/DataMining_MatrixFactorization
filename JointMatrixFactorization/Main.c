@@ -26,7 +26,7 @@ int main()
 	printf("\n%s\n", menu);
 
 	while (true) {
-	Starting:
+Starting:
 		// Enter number of sources
 		printf("%s: ", cmd1);
 		gets_s(cmd, sizeof(cmd));
@@ -42,8 +42,9 @@ int main()
 
 				// Reset commande detector
 				if (!(strcmp(cmd, "R") && strcmp(cmd, "r"))) {
-					free(source);
-					printf("[RESET]\n");
+					reset(source, srcIndex);
+					srcIndex = 0;
+					printf("[RESET]\n\n");
 					goto Starting;
 				}
 				// Quit command detector
@@ -105,6 +106,7 @@ int main()
 				fclose(input);
 				printf("Reading finished.\n");
 			}
+			srcIndex = 0;
 			printf("\n");
 
 			while (true) {
@@ -117,8 +119,8 @@ int main()
 
 				// Reset commande detector
 				if (!(strcmp(cmd, "R") && strcmp(cmd, "r"))) {
-					free(source);
-					printf("[RESET]\n");
+					reset(source, srcSz);
+					printf("[RESET]\n\n");
 					goto Starting;
 				}
 				// Quit command detector
@@ -133,8 +135,8 @@ int main()
 
 					// Reset command detector
 					if (!(strcmp(cmd, "R") && strcmp(cmd, "r"))) {
-						free(source);
-						printf("[RESET]\n");
+						reset(source, srcSz);
+						printf("[RESET]\n\n");
 						goto Starting;
 					}
 					// Quit command detector
@@ -148,21 +150,19 @@ int main()
 						// Perform algorithms
 						matrix_factorization(source, srcSz, alpha);
 
-						// TODO: Continue or not?
+						joint_clear(source, srcSz);
 					}
 				}
 				else {
 					printf("Error: Invalid input.\n");
 				}
 			}
-
-			free(source);
 		}
 		else if (!(strcmp(cmd, "q") && strcmp(cmd, "Q"))) {
 			break;
 		}
 		else if (!(strcmp(cmd, "r") && strcmp(cmd, "R"))) {
-			printf("[RESET]\n");
+			printf("[RESET]\n\n");
 			continue;
 		}
 		else {

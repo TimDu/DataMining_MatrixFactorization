@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_LOOP 1000
+#define MAX_LOOP 1
 
 double **_getW(double**, int, int);
 double** _sumH(Source*, int);
@@ -106,7 +106,7 @@ void matrix_factorization(Source *src, int size, double alpha)
 			clear2D(&temp, src[i].C);
 
 			temp = multiply(trans, src[i].C, w, src[i].C, src[i].N);
-			clear2D(trans, src[i].N);
+			clear2D(&trans, src[i].C);
 			wwh = multiply(
 				temp, src[i].C, src[i].H, src[i].K, src[i].C);
 			clear2D(&temp, src[i].C);
@@ -143,23 +143,6 @@ void matrix_factorization(Source *src, int size, double alpha)
 
 		cost = _getCost(src, size, alpha);
 		printf("%f ", cost);
-	}
-	printf("\n");
-	FILE *f = (FILE*)malloc(sizeof(FILE));
-	fopen_s(&f, "example.txt", "w");
-	for (int i = 0; i < src->N; ++i) {
-		for (int j = 0; j < src->K; ++j) {
-			fprintf(f, "%3.1f ", src->V[i][j]);
-		}
-		fprintf(f, "\n");
-	}
-	fprintf(f, "\n");
-	double **wh = multiply(src->W, src->N, src->H, src->K, src->C);
-	for (int i = 0; i < src->N; ++i) {
-		for (int j = 0; j < src->K; ++j) {
-			fprintf(f, "%3.1f ", wh[i][j]);
-		}
-		fprintf(f, "\n");
 	}
 }
 
