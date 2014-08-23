@@ -1,8 +1,10 @@
 #include "utility.h"
 #include "itemproc.h"
+#include "matrix.h"
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#include <math.h>
 
 /*
 	Function: check_empty
@@ -122,6 +124,98 @@ double find_number(char *str)
 	if (index == 0) { return 0; }
 
 	return strtod(num, NULL);
+}
+
+/*
+	Function: vector_dist
+	----------------------
+	Internal function. Finds distance between same item columns in two
+	different soruces.
+
+	Parameters:
+	src - source structure
+	a - index of the first source
+	b - index of the second source
+	size - size of sources
+	k - index of item column
+
+	Returns:
+	euclidean distance. Otherwise, -1 if index is out of source boundary
+*/
+double vector_dist(Source *src, int a, int b, int size, int k)
+{
+	double result = -1.0;
+
+	if ((a < size) && (b < size)) {
+		result = 0;
+		for (int i = 0; i < src->C; ++i) {
+			result += pow(src[b].H[i][k] - src[a].H[i][k], 2.0);
+		}
+		result = sqrt(result);
+	}
+	
+	return result;
+}
+
+/*
+	Function: get_reliable
+	-----------------------
+	Calculate final reliable score matrix.
+
+	Parameters:
+	src - source structure
+	size - size of sources
+
+	Returns:
+	reliable score matrix
+ */
+double** get_reliable(Source *src, int size)
+{
+	double temp = -1.0;
+	double min = -1.0;
+	double max = -1.0;
+	double comp;
+	double **result = (double**)malloc(size * sizeof(double*));
+
+	for (int i = 0; i < size; ++i) {
+		result[i] = (double*)malloc(src->K * sizeof(double));
+		for (int k = 0; k < src->K; ++k) {
+			for (int j = 0; j < size; ++j) {
+				if (i != j) {
+					comp = vector_dist(src, i, j, size, k);
+					if ((temp > comp) || (temp < 0)) {
+						temp = comp;
+					}
+				}
+			}
+			result[i][k] = 1.0 / temp;
+			temp = -1;
+			if ((max == -1) || max < result[i][k]) {
+				max = result[i][k];
+			}
+			if ((min == -1) || (min > result[i][k])) {
+				min = result[i][k];
+			}
+		}
+	}
+
+	// Normalization
+	if (max != min) {
+		for (int i = 0; i < size; ++i) {
+			for (int k = 0; k < src->K; ++k) {
+				result[i][k] = (result[i][k] - min) / (max - min); 
+			}
+		}
+	}
+	else {
+		for (int i = 0; i < size; ++i) {
+			for (int k = 0; k < src->K; ++k) {
+				result[i][k] = 1.0;
+			}
+		}
+	}
+	
+	return result;
 }
 
 /*

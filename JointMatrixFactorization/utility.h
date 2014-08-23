@@ -34,6 +34,7 @@ typedef struct Source
 
 bool check_empty(FILE *file);
 double find_number(char *str);
+double** get_reliable(Source *src, int size);
 // Find item position from Item structure
 int find_index(Item* items, char* item, int start, int end);
 void inputs_initialize(Source *src);

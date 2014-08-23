@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MAX_LOOP 1
+#define MAX_LOOP 700
 
 double **_getW(double**, int, int);
 double** _sumH(Source*, int);
@@ -50,9 +50,10 @@ void matrix_factorization(Source *src, int size, double alpha)
 	_initialize(src, size);
 
 	cost = _getCost(src, size, alpha);
-	printf("%f ", cost);
+
 	while ((fabs(old_cost - cost) > 1.0e-8) && (loop < MAX_LOOP)) {
-		++loop; printf(" %d\n", loop);
+		++loop;
+		printf("\rIterations %d / %d", loop, MAX_LOOP);
 		old_cost = cost;
 
 		sum_h = _sumH(src, size);
@@ -142,8 +143,8 @@ void matrix_factorization(Source *src, int size, double alpha)
 		clear2D(&n_sum_h, src->C);
 
 		cost = _getCost(src, size, alpha);
-		printf("%f ", cost);
 	}
+	printf("\nDone.\n");
 }
 
 /*

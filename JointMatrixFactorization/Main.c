@@ -112,6 +112,8 @@ Starting:
 			while (true) {
 				int val_c;
 				double alpha;
+				double **res;
+				FILE *f;
 
 				// Enter number of groups
 				printf("%s: ", cmd3);
@@ -150,6 +152,20 @@ Starting:
 						// Perform algorithms
 						matrix_factorization(source, srcSz, alpha);
 
+						// Calculates and ecords reliable matrix
+						res = get_reliable(source, srcSz);
+
+						f = (FILE*)malloc(sizeof(FILE));
+						fopen_s(&f, "reliable_matrix.txt", "w");
+						for (int i = 0; i < srcSz; ++i) {
+							for (int j = 0; j < source->K; ++j) {
+								fprintf(f, "%3.2f ", res[i][j]);
+							}
+							fprintf(f, "\n");
+						}
+
+						fclose(f);
+						clear2D(&res, srcSz);
 						joint_clear(source, srcSz);
 					}
 				}
